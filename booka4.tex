@@ -2,14 +2,14 @@
 
 \usepackage{graphicx} % Standardpaket zur Grafikeinbindung
 \usepackage{amsmath,amssymb} % Erweiterung des Mathematik-Modus
-\usepackage[colorinlistoftodos, german]{todonotes} % Option 'disable' entfernt alle ToDos
+\usepackage[colorinlistoftodos, english]{todonotes} % Option 'disable' entfernt alle ToDos
 \usepackage[absolute,overlay]{textpos}
 \usepackage{vmargin}          % Adjust margins in a simple way
 \usepackage{tikz}
 
 % Toggle the following two lines to switch between english and german layout
 % \usepackage[english]{babel} % Neue deutsche Rechtschreibung und Silbentrennung.
-\usepackage[ngerman]{babel} % Neue deutsche Rechtschreibung und Silbentrennung.
+\usepackage[british, UKenglish, USenglish, english, american]{babel} % Neue deutsche Rechtschreibung und Silbentrennung.
 
 \usepackage[raiselinks=true,
             bookmarks=true,
@@ -57,7 +57,7 @@
 \newcommand{\titlefig}{\includegraphics[width=1.0\textwidth]{graphics/not-the-final-title}}
 
 \begin{document}
-
+\selectlanguage{english}
 \pagenumbering{roman}
 \include{preface/kit_titlepage}
 \include{preface/titlepage}
@@ -78,7 +78,11 @@
 \pagestyle{scrheadings}
 \pagenumbering{arabic}
 
-\include{content/example}
+\include{content/Introduction}
+\include{content/Vision}
+\include{content/Kalman}
+\include{content/HighLevel}
+\include{content/Conclusion}
 
 \pagestyle{scrplain}
 \appendix
