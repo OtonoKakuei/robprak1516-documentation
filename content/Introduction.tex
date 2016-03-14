@@ -53,16 +53,43 @@ In the field of robotics Kalman filters can be utilized to predict future poses 
 \item cameras that track predefined markers. 
 \end{itemize}
 
-By combining the last estimation and the current sensor outputs a new estimation for the current state is obtained. In this process two steps are commonly distinguished: \textit{predict (a priori)} and \textit{update (a posteriori)}.
+By combining the last estimation and the current sensor outputs a new estimation for the current state is obtained. This process is commonly split into two steps: \textit{predict (a-priori)} and \textit{update (a-posteriori)}.
 \\\\
-During \textbf{prediction} the next state as well as its covariance are estimated. After that new sensor data is compared with the predicted state, which results in the calculation of the so-called  Gain. The Kalman Gain is an indicator for the certainty of both measurements and prediction. High covariances in the prediction increase the Gain while high covariances in the measurements decrease it.
+During \textbf{predict phase} the next state as well as its covariance are estimated. After that new sensor data is compared with the predicted state, which results in the calculation of the so-called  \textit{Kalman Gain}. The Gain is an indicator for the certainty of both measurements and prediction. High covariances in the prediction increase the Gain while high covariances in the measurements decrease it.
 
-$$\text{a priori state estimate:} $$
-$$\text{a priori covariance estimate:} $$
-
-This will result in the filter trusting either the measurements or the predictions more depending on the gain. 
+In the \textbf{update phase} the Kalman filter produces a-posteriori state and covariance estimates based on the Gain. The higher the gain, the closer these estimates will be to the measurement output and vice versa. It can thus also be seen as an expression of which of the two inputs the filter trusts more: its prediction or the new sensor data.
 \\\\
-Based on the Gain the Kalman filter produces a posteriori state and covariance estimates during \textbf{update phase}. The higher the gain, the closer these estimates will be to the measurement output and vice versa.
+Given an initial state $x_0\in \mathbb{R}^n$, where $n$ is the number of observed values (e.g. x, y coordinates and velocity in x and y direction) and a covariance matrix $P$ with uncertainty values for each state component, the Kalman filter is described by several matrices that define states and perform the transition from \textit{a-priori} state to \textit{a-posteriori} state:
+\begin{description}
+\item[Transition matrix $T$] describes transition from state $x_i$ to next state $x_{i+1}$ without taking into account any noise.
+\item[Process noise matrix $Q$] contains covariance values that describe the process noise, e.g. an uneven path, friction or wind.
+\item[Control input matrix $C$] is applied to an optional control input $c$, e.g. steering or braking.
+\item[Measurement/Observation matrix $M$] maps the true state to the observed state in which the sensor input $z$ is described. It also requires a ...
+\item[Measurement covariance matrix $R$] which contains the measurement uncertainties.
+\end{description}
 
-$$\text{a posteriori state estimate:} $$
-$$\text{a posteriori covariance estimate:} $$
+With these matrices the Kalman filter predicts the next state and covariance as follows:
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{l l}
+a-priori state estimate: & $x_{i+1} = T \cdot x_i$ \\
+a-priori covariance estimate: & $P_{i+1} = T \cdot P_i \cdot T^T + Q$\\
+\end{tabular}
+\caption{predict phase}
+\end{center}
+\end{table}
+
+Then it updates the estimated state and covariance:
+
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{l l}
+innovation of the state $x$: & $w = z - (M \cdot x)$\\
+innovation of the covariance $P$: & $S = M \cdot P \cdot M^T + R$\\
+Kalman Gain: & $K = \frac{P \cdot M^T}{S}$\\
+a-posteriori state estimate: & $x = x + K \cdot w$ \\
+a-posteriori covariance estimate: & $P = (I - (K \cdot M)) \cdot P$\\
+\end{tabular}
+\caption{update phase}
+\end{center}
+\end{table}
