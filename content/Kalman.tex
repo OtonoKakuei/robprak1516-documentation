@@ -50,10 +50,13 @@ The visualization node subscribes to the output topic of the Kalman Filter and t
 It is also possible to display process covariances over time to gain a better understanding of why there might be a sudden change in the kalman filter's behaviour.
 
 \section{Difficulties}
-\subsection{Difficulties with employing MCA2}
-When the Kalman Filter performed satisfactorily with the artificial test data, the next step consisted of producing more realistic data with a true robot simulator for which MCA2 appeared to be a suitable solution. But the installation of MCA2 and the simulator presented unexpected difficulties and failed in the end.
+\subsection{Initial start with custom Kalman Implementation}
+Before using the \texttt{robot\_localization} package a quick attempt to implement the Kalman Filter manually was investigated. Luckily our attention was directed towards the \texttt{robot\_localization} package before more than data subscription and publishing were implemented, both of which were fortunately reused throughout the project.
 
-The quality of the MCA2 documentation posed a major problem. It is highly fragmented, redundant, often outdated and in some places contradictory. Very often it was difficult to understand if an installation error was caused by a user mistake or by the documentation and if the latter, whether it is only unclear, incomplete or incorrect. 
+\subsection{Difficulties with employing MCA2}
+When the Kalman Filter performed satisfactorily with the artificial test data, the next step consisted of producing more realistic data with a true robot simulator. For this MCA2 appeared to be a suitable solution. But the installation of MCA2 and the simulator presented unexpected difficulties and failed in the end.
+
+One of the reasons is the quality of the MCA2 documentation which posed a major problem. It is highly fragmented, redundant, often outdated and in some places contradictory. Very often it was difficult to understand if an installation error was caused by a user mistake or by the documentation and if the latter, whether it is only unclear, incomplete or incorrect. 
 
 The usual approach for a computer scientist is to read the documentation and rule out any self-made errors before asking possibly unnecessary questions. This is why the lacking documentation caused more harm than good.
 
@@ -62,14 +65,16 @@ It was finally discovered that additional data only existing on a USB drive was 
 By that time data publishing and necessary software for it have already been facilitated on the robot. So MCA2 was abandoned and the robot itself was used to generate data.
 
 \subsection{Roslaunch initialization and ROS\_IP behind NATs}
-While working with virtual machines for ROS package development the problem of incorrect communication between the packages was discovered. Only when starting the nodes in the right order with appropriate delays in between the system would work on the robot. In general the specificatioin of the ROS\_IP environment variable is used to solve that issue. The local IP of the virtual machines behind a NAT was not available and so the execution of the nodes was completly moved to the robot.
-\subsection{Started with own Kalman Impl}
-Before using the robot\_localization package a short approach was started to implement the kalman filter by hand. Luckily the hint on the robot\_localization package was received before more than the subscription and publishing of data was implemented, which became reused throughout the project.
-\subsection{WLAN Overload -> huge delay}
-When attaching the camera to the robot in a manner that, the image data has to be sent by WLAN, the whole ROS communication is extremly slow. This problem was solved by the complete installation of drivers for the camera on the robot. So the camera and the nodes of the vision group could operate completely local on the robot.
-\subsection{Boundary of max valid jumps between values}
-When first configuring the robot\_localization package a threshold for maximal valid jumps in data was set to a rather low value. This later caused a lot of unexpected behavior in the kalman filter with not respecting changes in one sensor at all. After setting this threshold to an appropriate value the filter worked even better as initally expected. This was based on the good values for the remaining parameters of the kalman filter, which had previously been well tested with the Matlab simulation.
+While working with virtual machines for ROS package development the problem of incorrect communication between the packages was discovered. Only when starting the nodes in the right order with appropriate delays in between, the system would work on the robot. In general the specification of the \texttt{ROS\_IP} environment variable is used to solve that issue. The local IP of the virtual machines behind a NAT was not available and so the execution of the nodes was completely moved to the robot.
+
+\subsection{Wifi Overload $\Rightarrow$ huge delays}
+When attaching the camera to the robot in a manner that the image data has to be sent over wifi, the whole ROS communication is extremly slow. This problem is solved by installing all drivers for the camera on the robot. So the camera and its related nodes can operate locally on the robot.
+
+\subsection{Boundary for accepted jumps between sensor outputs}
+When first configuring the \texttt{robot\_localization} package, a threshold for tolerated jumps in the sensor data was set to a rather low value. This caused the Kalman Filter to exhibit a lot of unexpected behavior, for instance it did not respect changes in one sensor at all. After setting the threshold to an appropriate value, the filter worked even better as initially expected. This is partly due to the well adjusted remaining parameters of the Kalman Filter which were already thoroughly tested with the Matlab simulation.
+
 \subsection{Set pose of robot\_localization does not work as expected}
-The robot\_localization package provides a set\_pose topic to force the actual pose of the robot. Unfortunately this sets the pose permanently and further input is ignored. This was not satisfying to implement a special behavior for the case the robot is kidnapped. The final approach uses a third input sensor that is filled with the approriate data and very low covariances to convince the kalman filter of the real current position.
+The \texttt{robot\_localization} package provides a \texttt{set\_pose} topic to force the actual pose of the robot. It was planned to use this topic to inform the Kalman Filter about the new pose after having recovered the robot from kidnapped state. Unfortunately this sets the pose permanently and further input is ignored, so another solution was necessary. The final approach uses a third virtual input sensor that sends the recovered pose along with very low covariances to convince the Kalman Filter to trust this source the most.
+
 \subsection{Unclear information about the data source topics and types for the data fusion}
-It was kind of an odyssey to find out which scripts to start on the robot to have the input topics available. During some periods alternative topics where used to at least gather some data from the robot. This was the case with the map position data of the robot which was temporarily replaced by the odometry values of the robot.
+Finding out which scripts must be started on the robot to make it publish its pose and twist turned out to be a challenge in itself. During some periods alternative topics were used to at least receive any data to work with. For example the map position of the robot was temporarily replaced by its odometry output.
