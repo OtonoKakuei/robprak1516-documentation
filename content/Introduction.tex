@@ -63,7 +63,6 @@ Given an initial state $x_0\in \mathbb{R}^n$, where $n$ is the number of observe
 \begin{description}
 \item[Transition matrix $T$] describes transition from state $x_i$ to next state $x_{i+1}$ without taking into account any noise.
 \item[Process noise matrix $Q$] contains covariance values that describe the process noise, e.g. an uneven path, friction or wind.
-\item[Control input matrix $C$] is applied to an optional control input $c$, e.g. steering or braking.
 \item[Measurement/Observation matrix $M$] maps the true state to the observed state in which the sensor input $z$ is described. It also requires a ...
 \item[Measurement covariance matrix $R$] which contains the measurement uncertainties.
 \end{description}
@@ -93,6 +92,16 @@ a-posteriori covariance estimate: & $P = (I - (K \cdot M)) \cdot P$\\
 \caption*{update phase}
 \end{center}
 \end{table}
+
+Figure \ref{kalman} illustrates the process.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{graphics/Kalman-Filter.png}
+\caption{Kalman Filter overview}
+\label{kalman}
+\centering
+\end{figure}
 
 It can be shown that under following conditions the Kalman filter delivers optimal results, i.e. it minimizes the covariances $P$ of a state and no other linear filter produces smaller variances on the estimated error\footnote{https://www.cds.caltech.edu/~murray/wiki/images/b/b3/Stateestim.pdf, p.11-12}:
 
