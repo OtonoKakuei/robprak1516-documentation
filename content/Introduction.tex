@@ -8,12 +8,29 @@ Imagine you are sitting in your office, dozing off, ready to sleep. As soon as y
 In this work we tackle the kidnapping problem on robots. The first step is to detect whether a kidnapping situation occurred and the second step is to relocalize itself. Detection can be done by determining whether some information from the sensors is missing or whether the perceived environment does not match the expected one. Recovery can be done by gathering  information while exploring the surroundings. If any known features are found, they will be matched with the robot's database. Successful matching means that the robot can use the results to estimate its position in the environment. Otherwise, the exploration continues.
 
 \chapter{Fundamentals}
-\section{ROS}
+\section{ROS -- the Robot Operating System}
+ROS is an open-source framework for robot software that was initially developed at Willow Garage in Palo Alto after ideas for it originated in the \textsc{Stair} and Personal Robotics research projects at Stanford University in 2007. 
+
+ROS aims to simplify development of complex robotic systems by introducing a vast ensemble of tools and packages for solving common robotics tasks. Among others these include typical features of an operating system such as hardware abstractions, inter-process communication, network communication, package management as well as compilers and libraries for supported languages. As of now ROS has been written for C++, Python and Lisp.
+
+\subsection{Network Communication}
+A ROS system typically consists of multiple interacting programs called \textit{nodes} and the \textit{ROS Master} that registers them and handles communication.
+
+Nodes can communicate asynchronously by using the \textit{Publisher-Subscriber} pattern: To send data, a node can publish to self-defined \textit{topics} and listen on other topics. Each topic is described by the type of \textit{messages} that are published on it. The description is a \texttt{csv}-similar \texttt{.msg}-file containing data types and an optional timestamp.
+A topic can be published to and listened on by many nodes. Consequently participants are agnostic about the identity of publishers.
+\\\\
+Alternatively synchronous communication is realized with \textit{Services} that are defined by message types for service requests and service replies. A node can act as a service and registers at the ROS Master with its name. Then other nodes can contact it by querying its address from the Master. Interaction with it runs over a newly established TCP/IP- connection and is similar to a remote procedure call.
+
+\subsection{Monitoring}
+ROS also provides means for monitoring the running system. For example nodes can publish to the \texttt{rosout}-topic for logging purposes.
+
+Several Command line tools display information on loaded entities, e.g. \texti{rosnode} shows information about active nodes such as its publications and subscriptions, supports pinging them, manually killing nodes etc. 
+
 \section{MCA}
 \section{Kinect}
 The Kinect is a 3D camera sensor developed by Microsoft for the Xbox video game console. In 2011 Microsoft released the Kinect for Windows SDK, one year later it released the Kinect robotics SDK.
 
-With its ability to recognize motion and distances, the Kinect is very well suited to assist basic robot movement and orientation tasks: obstacle avoidance, environment mapping, distance detection, object tracking etc.
+With its ability to recognize motion and distances, it is very well suited to assist basic robot movement and orientation tasks: obstacle avoidance, environment mapping, distance detection, object tracking etc.
 
 In this work we primarily rely on the Kinect's object tracking abilities.
   
