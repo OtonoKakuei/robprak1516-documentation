@@ -24,7 +24,13 @@ Alternatively synchronous communication is realized with \textit{Services} that 
 \subsection{Monitoring}
 ROS also provides means for monitoring the running system. For example nodes can publish to the \texttt{rosout}-topic for logging purposes.
 
-Several Command line tools display information on loaded entities, e.g. \textit{rosnode} shows information about active nodes such as its publications and subscriptions, supports pinging them, manually killing nodes etc. 
+Several Command line tools display information on loaded entities, e.g. \textit{rosnode} shows information about active nodes such as its publications and subscriptions, supports pinging them, manually killing nodes etc. Similarly \texttt{rostopic}, \texttt{rosservice} and \texttt{rosmsg} provide information and commands on the respective subjects.
+
+Alternatively qt-based GUI tools can be used. For example \texttt{rqt\_deps} generates a pdf with all used ROS dependencies. \texttt{rqt\_graph} displays a graph of nodes and topics.
+
+One of the most powerful tool is probably \texttt{rviz}: A 3D visualizer that continuously displays information read from topics such as robot positions, point clouds, odometry data, polygons, maps and many more. If available displays are not satisfactory, the user can also use generic markers to visualize arbitrary data.
+
+
 
 \section{MCA}
 \section{Kinect}
