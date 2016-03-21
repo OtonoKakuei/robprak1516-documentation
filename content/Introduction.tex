@@ -30,9 +30,22 @@ Alternatively qt-based GUI tools can be used. For example \texttt{rqt\_deps} gen
 
 One of the most powerful tool is probably \texttt{rviz}: A 3D visualizer that continuously displays information read from topics such as robot positions, point clouds, odometry data, polygons, maps and many more. If available displays are not satisfactory, the user can also use generic markers to visualize arbitrary data.
 
+\section{MCA2 -- Modular Controller Architecture Version 2}
+MCA2 is a C++ robotics framework developed at the FZI in Karlsruhe between 1998 and 2012. It is organized in groups of multiple modules with a standardized set of 5 interfaces: 
+\begin{itemize}
+\item Sensor input
+\item Sensor output
+\item Controller input
+\item Controller output
+\item Internal parameters and variables
+\end{itemize}
 
+The input and output interfaces serve as communication points to other modules. They are data vectors of varying dimensions between which are data manipulating \texttt{sense()} and \texttt{control()} edges. E.g. sensor input can be passed into a module which alters the data and passes it on to the next module. The fifth module is able to alter the modules internal parameters at runtime.
 
-\section{MCA}
+Module groups are arranged in hierarchical order. To the outside they appear like any other module, but each call to the group's \texttt{control()} or \texttt{sense()} function initiates a cascade of calls to the contained modules in hierarchical order.
+
+An MCA part consists of multiple groups and modules. It executes them in a loop and can also run them in so-called \texttt{ThreadControllers}.
+
 \section{Kinect}
 The Kinect is a 3D camera sensor developed by Microsoft for the Xbox video game console. In 2011 Microsoft released the Kinect for Windows SDK, one year later it released the Kinect robotics SDK.
 
