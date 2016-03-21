@@ -37,7 +37,31 @@ For the generation of more realistic 2D poses and view angle of the robot a smal
 Next placeholder sensor nodes were written that do nothing but read simulation data from file and publish them in a loop. This way the Kalman Filter could be tested even if the actual sensor nodes were still in development. It was now possible to tweak the many parameters of the \texttt{robot\_localization node} and study the filters behaviour independently of the other groups.
 
 \subsection{Rviz Simulation}
-After development of the input and procesing pipeline for test data the next challenge was to evaluate the filter's outputs. Since humans are very ineffective in classifying text data, the ROS package \texttt{rviz} was utilized to visually compare input data and filtered result. The visual proof for the effects of parameter changes greatly enhanced our capability to evaluate the Kalman filter's performance.
+After development of the input and procesing pipeline for test data, the next challenge was to evaluate the filter's outputs. Since humans are very ineffective in classifying text data, the ROS package \texttt{rviz} was utilized to visually compare input data and filtered result. The visual proof for the effects of parameter changes greatly enhanced our capability to evaluate the Kalman filter's performance. In the figures \ref{Fig: Kalman Fusion - Low}, \ref{Fig: Kalman Fusion - Medium} and \ref{Fig: Kalman Fusion - High} the behaviour of the X-Component of the Target Position is visualized. The blue line represents the position received from the Vision Group. While the red line represents the data received from the robots mapping module. The green line is the fused data of the kalman filter. The jumps to the blue value are triggered by the Highlevel Group when a kidnapped signal is received. Depending on the system's confidence the jump back to normal has different speeds.
+
+\begin{figure}[thpb]
+      \centering
+      \includegraphics[width=0.5\textwidth]{graphics/kalman_fast.png}
+      %\includegraphics[scale=1.0]{figurefile}
+      \caption{Kalman fusion - Low System Confidence}
+      \label{Fig: Kalman Fusion - Low}
+   \end{figure}
+
+\begin{figure}[thpb]
+      \centering
+      \includegraphics[width=0.5\textwidth]{graphics/kalman_medium.png}
+      %\includegraphics[scale=1.0]{figurefile}
+      \caption{Kalman fusion - Medium System Confidence}
+      \label{Fig: Kalman Fusion - Medium}
+   \end{figure}
+	
+\begin{figure}[thpb]
+      \centering
+      \includegraphics[width=0.5\textwidth]{graphics/kalman_slow.png}
+      %\includegraphics[scale=1.0]{figurefile}
+      \caption{Kalman fusion - High System Confidence}
+      \label{Fig: Kalman Fusion - High}
+   \end{figure}
 
 \subsection{visualization node}
 The visualization node subscribes to the output topic of the Kalman Filter and the input topcis from the robot to create displayable data which can be used to verify the data fusion quality. This displayable data are markers published to \texttt{rviz} that shows them in its coordinate system. There are two possible visualization modes:
