@@ -1,11 +1,28 @@
 \chapter{Evaluation}
 \section{Integration}
-Due to the consequent usage of the IDSGit the development process can be reviewed in the gitorious commit path. The pure code combiniation of the groups' development branches was quite simple and required only the installation of the dependencies of the groups. After everything compiled fine the real integration work started. All subscribed and published topics had to been updated to match the requirements that had been discussed in advance. The main source of missing specification have been the Frames each Group publishes their data in. Also some Topic names had to be updated since every group used their own topic namespace.
-The main integration work done till the end of the project has been to deliver the data the other groups acutally expect to make the Software function as expected.
+Due to the consequent usage of the IDSGit the development process can be reviewed in the gitorious commit path. The pure code combiniation of the groups' development branches was quite simple and required only the installation of the dependencies of the groups. After everything compiled fine the real integration work started. All subscribed and published topics had to be updated to match the requirements that had been discussed in advance. The main source of missing specification have been the frames each group publishes their data in.
+
+Also some topic names had to be updated since every group used their own topic namespace.
+The main integration work done till the end of the project has been to deliver the data the other groups actually expect to make the software function as expected.
+
 \section{Test Scenario}
+To evaluate the implementation three scenarios with increasing difficulty levels were deviced and tested:
+\begin{enumerate}
+\item Localization with laser scanners is disabled and the robot is moved while its camera is in contact with a marker.
+
+No actual kidnapping takes place, this only ensures that the robot moves its head correctly to stay in contact with the marker.
+
+\item Both laser scanners and camera tracking are disabled before kidnapping the robot. At the new location the camera is in immediate contact with a marker. 
+
+Recovery from kidnapped state took place immediately.
+\item Finally the robot is kidnapped like in scenario 2 but is not provided with a marker. 
+
+In this case the robot first moves its head to search for a marker and if it finds none, moves left along the closest obstacle while continuously searching for markers.
+\end{enumerate}
+
 \chapter{Conclusion}
 \section{Summary and Conclusion}
 \section{Outlook}
 In the future the next obvious step is to explore the possibility and requirements for camera tracking of natural markers instead of AR tags. Although AR tags are easy to use and quickly setup, they cannot be attached to arbitrary surfaces, either because of practical or simply because of optical reasons.
 
-It might also be interesting to implement the ability for the robot to resume its previous task, i.e. to find its way back or to directly head to its destination to continue where it left off.
+It is also necessary to find a way to smoothly integrate kidnapping recovery as a background service. At the moment the camera keeps tracking markers as soon as they are in range, thus rendering it useless for the robot's main task.
