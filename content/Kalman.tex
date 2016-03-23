@@ -98,7 +98,11 @@ When attaching the camera to the robot in a manner that the image data has to be
 When first configuring the \texttt{robot\_localization} package, a threshold for tolerated jumps in the sensor data was set to a rather low value. This caused the Kalman Filter to exhibit a lot of unexpected behavior, for instance it did not respect changes in one sensor at all. After setting the threshold to an appropriate value, the filter worked even better as initially expected. This is partly due to the well adjusted remaining parameters of the Kalman Filter which were already thoroughly tested with the Matlab simulation.
 
 \subsection{Set pose of robot\_localization does not work as expected}
-The \texttt{robot\_localization} package provides a \texttt{set\_pose} topic to force the actual pose of the robot. It was planned to use this topic to inform the Kalman Filter about the new pose after having recovered the robot from kidnapped state. Unfortunately this sets the pose permanently and further input is ignored, so another solution was necessary. The final approach uses a third virtual input sensor that sends the recovered pose along with very low covariances to convince the Kalman Filter to trust this source the most.
+The \texttt{robot\_localization} package provides a \texttt{set\_pose} topic to force the actual pose of the robot. It was planned to use this topic to inform the Kalman Filter about the new pose after having recovered the robot from kidnapped state. Unfortunately this sets the pose permanently and further input is ignored, so another solution was necessary.
+
+The approach of choice uses a third virtual input sensor that sends the recovered pose along with very low covariances to convince the Kalman Filter to trust this source the most.
+
+But in the final implementation the necessity to react to a kidnap event was disabled in the Kalman filter. Instead, we opted for a simpler behaviour: the high level logic updates the transform immediately after having resolved the kidnapping, so that sensor data discrepancies are removed. 
 
 \subsection{Unclear information about the data source topics and types for the data fusion}
 Finding out which scripts must be started on the robot to make it publish its pose and twist turned out to be a challenge in itself. During some periods alternative topics were used to at least receive any data to work with. For example the map position of the robot was temporarily replaced by its odometry output.
