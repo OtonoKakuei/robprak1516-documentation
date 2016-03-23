@@ -5,7 +5,7 @@ Imagine you are sitting in your office, dozing off, ready to sleep. As soon as y
 
 \section{Objectives}
 
-In this work we tackle the kidnapping problem on robots. The first step is to detect whether a kidnapping situation occurred and the second step is to relocalize itself. Detection can be done by determining whether some information from the sensors is missing or whether the perceived environment does not match the expected one. Recovery can be done by gathering  information while exploring the surroundings. If any known features are found, they will be matched with the robot's database. Successful matching means that the robot can use the results to estimate its position in the environment. Otherwise, the exploration continues.
+In this work we tackle the kidnapping problem on robots. The first step is to detect whether a kidnapping situation occurred and the second step is to relocalize the robot. Missing information from sensors as well as discrepancies between the perceived and expected environment are hints of a kidnapping. Recovery can be done by gathering information while exploring the surroundings. If any known features are found, they will be matched with the robot's database. Successful matching means that the robot can use the results to estimate its position in the environment. Otherwise, the exploration continues.
 
 \chapter{Fundamentals}
 \section{ROS -- the Robot Operating System}
@@ -46,6 +46,10 @@ Module groups are arranged in hierarchical order. To the outside they appear lik
 
 An MCA part consists of multiple groups and modules. It executes them in a loop and can also run them in so-called \texttt{ThreadControllers}.
 
+Just like ROS, MCA2 comes with a GUI for monitoring robot parameters. It is possible to customize the display through mouse control.
+\\\\
+Among other projects MCA2 was used at the FZI in Karlsruhe in the LAURON walking machine as control software\footnote{http://www.fzi.de/forschung/projekt-details/lauron/}.
+
 \section{Kinect}
 The Kinect is a 3D camera sensor developed by Microsoft for the Xbox video game console. In 2011 Microsoft released the Kinect for Windows SDK, one year later it released the Kinect robotics SDK.
 
@@ -54,9 +58,18 @@ With its ability to recognize motion and distances, it is very well suited to as
 In this work we primarily rely on the Kinect's object tracking abilities.
   
 \section{Laser Scanner}
-3D laser scanner use narrow laser-beam to scan their environment and allow almost continuous scanning - regardless of whether objects are moving or not. As a result, 3D laser scanner gets a set of points which represent the direction and distance of objects in around. Sick LMS100 (shown in Figure \ref{Laser}) has the scanning angle of  270$^\circ$ and has high detection capability.
+3D laser scanners use narrow laser-beams to scan their environment and allow almost continuous mapping - regardless of whether objects are moving or not. They produce point clouds which represent the direction and distance of objects in the environment. \textit{Sick LMS100} (shown in Figure \ref{Laser}) is used in the HoLLiE assistance robot\footnote{http://www.fzi.de/en/research/projekt-details/hollie/}. It has a scanning angle of  270$^\circ$, a range of 18m and features a detection capabilities for arbitrary object forms\footnote{https://www.sick.com/de/de/mess-und-detektionsloesungen/2d-laserscanner/lms1xx/lms100-10000/p/p109841}.
 
-We can get the output from laser scanner in ROS with sensor\_masgs/LaserScan message. The message is made up of several parts, including header, ranges, and other information of laser scaner. The start and end angle of the scan, angular distance between measurements, time between measurements, minimum and minimum range value are stored in this message. Most important information we need is the angle of each hit and its distance (range) from the scanner.
+In ROS the laser scanner output is published as \texttt{\_masgs/LaserScan} message. Among others it contains following information:
+\begin{itemize}
+\item start angle
+\item end angle
+\item angular distance between measurements
+\item time between measurements
+\item minimum and maximum range
+\end{itemize}
+
+For localization purposes the most important information are the angles of each hit and the objects' distance from the scanner.
 
 \begin{figure}[thpb]
       \centering
@@ -66,9 +79,13 @@ We can get the output from laser scanner in ROS with sensor\_masgs/LaserScan mes
       \label{Laser}
    \end{figure}
 \section{ASAP (Advanced Shared Autonomy Platform)}
-The ASAP (shown in Figure \ref{ASAP}), short for Advanced Shared Autonomy Platform, is a mobile robotic platform based on two Segway RMP-50 Omni platforms. The Platform is mounted with four omnidirectional plastic rollers, so that the Segway can free move in all directions (shown in Figure \ref{Omni}). In addition, this ASAP includes some sensors, on-board comoputer, software system. For sensor, there are Two Sick LMS100 laser scanners and a Kinect on top. The embeded computer is Esperia, which has 4G ram, 64G SSD, core i7 M620 CPU and can be connected through WLAN address 141.21.13.215. Ubuntu 14.04 Trusty, ROS Indigo, MCA2 are three main software systems in this ASAP.
+The ASAP (shown in figure \ref{ASAP}), short for Advanced Shared Autonomy Platform, is a mobile robotic platform based on two Segway RMP-50 Omni platforms featuring two omnidirectional plastic rollers each, so that the platform can move freely in all directions (see figure \ref{Omni}).
 
-\begin{figure}[thpb]
+In addition, this ASAP equipped with two Sick LMS100 laser scanners, a kinect and an on-board computer with a Linux system for control and monitoring. The embedded computer features 4GB RAM, a 64GB SSD, a core i7 M620 CPU and is accessible through wifi. 
+
+Ubuntu 14.04 Trusty, ROS Indigo and MCA2 are installed on it.
+
+\begin{figure}[ht]
       \centering
       \includegraphics[width=0.5\textwidth]{graphics/ASAP.png}
       %\includegraphics[scale=1.0]{figurefile}
@@ -76,7 +93,7 @@ The ASAP (shown in Figure \ref{ASAP}), short for Advanced Shared Autonomy Platfo
       \label{ASAP}
    \end{figure}
 
-\begin{figure}[thpb]
+\begin{figure}[ht]
       \centering
       \includegraphics[width=0.5\textwidth]{graphics/SegwayPlattform.png}
       %\includegraphics[scale=1.0]{figurefile}
