@@ -51,7 +51,24 @@ Just like ROS, MCA2 comes with a GUI for monitoring robot parameters. It is poss
 Among other projects MCA2 was used at the FZI in Karlsruhe in the LAURON walking machine as control software\footnote{http://www.fzi.de/forschung/projekt-details/lauron/}.
 
 \section{Kinect}
-The Kinect is a 3D camera sensor developed by Microsoft for the Xbox video game console. In 2011 Microsoft released the Kinect for Windows SDK, one year later it released the Kinect robotics SDK.
+The Kinect is a 3D camera sensor developed by Microsoft for the Xbox video game console. In 2011 Microsoft released the Kinect for Windows SDK, one year later it released the Kinect robotics SDK. It includes following components (see also figure \ref{Kinect})\footnote{https://msdn.microsoft.com/en-us/library/jj131033.aspx}:
+
+\begin{itemize}
+\item Infrared emitter
+\item Infrared depth sensor that captures the reflected beams of the emitter.
+\item Color sensor that stores RGB color with a resolution of 1280$\times$960.
+\item tilt motor for tilting the Kinect up to $\pm 27\deg$.
+\item 4 microphones that are arranged to distinguish sound direction and source location
+\item 3-axes Accelerometer for information about the Kinect's orientation
+\end{itemize}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.5\textwidth]{graphics/kinect.png}
+\caption{main components of a Kinect system}
+\label{Kinect}
+\centering
+\end{figure}
 
 With its ability to recognize motion and distances, it is very well suited to assist basic robot movement and orientation tasks: obstacle avoidance, environment mapping, distance detection, object tracking etc.
 
