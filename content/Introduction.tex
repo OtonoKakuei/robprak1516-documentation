@@ -56,10 +56,10 @@ The Kinect is a 3D camera sensor developed by Microsoft for the Xbox video game 
 \begin{itemize}
 \item Infrared emitter
 \item Infrared depth sensor that captures the reflected beams of the emitter.
-\item Color sensor that stores RGB color with a resolution of 1280$\times$960.
-\item tilt motor for tilting the Kinect up to $\pm 27\deg$.
+\item Color sensor that stores RGB colors with a resolution of 1280$\times$960.
+\item Tilt motor for tilting the Kinect up to $\pm 27^\circ$.
 \item 4 microphones that are arranged to distinguish sound direction and source location
-\item 3-axes Accelerometer for information about the Kinect's orientation
+\item 3-axes accelerometer for information about the Kinect's orientation
 \end{itemize}
 
 \begin{figure}[ht]
@@ -96,7 +96,7 @@ For localization purposes the most important information are the angles of each 
       \label{Laser}
    \end{figure}
 \section{ASAP (Advanced Shared Autonomy Platform)}
-The ASAP (shown in figure \ref{ASAP}), short for Advanced Shared Autonomy Platform, is a mobile robotic platform based on two Segway RMP-50 Omni platforms featuring two omnidirectional plastic rollers each, so that the platform can move freely in all directions (see figure \ref{Omni}).
+The ASAP (shown in figure \ref{ASAP}), short for Advanced Shared Autonomy Platform, is a mobile robotic platform based on two Segway RMP-50 Omni platforms featuring two omnidirectional plastic rollers each (\textit{Mecanum wheels}), so that the platform can move freely in all directions, see figure \ref{Omni}.
 
 In addition, this ASAP equipped with two Sick LMS100 laser scanners, a kinect and an on-board computer with a Linux system for control and monitoring. The embedded computer features 4GB RAM, a 64GB SSD, a core i7 M620 CPU and is accessible through wifi. 
 
@@ -106,7 +106,7 @@ Ubuntu 14.04 Trusty, ROS Indigo and MCA2 are installed on it.
       \centering
       \includegraphics[width=0.5\textwidth]{graphics/ASAP.png}
       %\includegraphics[scale=1.0]{figurefile}
-      \caption{The structer of Advanced Shared Autonomy Platform, and red arrow shows the forward direction of the platform, which is the same as the X axes in ROS.}
+      \caption[Advanced Shared Autonomy Platform]{The structer of Advanced Shared Autonomy Platform, and red arrow shows the forward direction of the platform, which is the same as the X axes in ROS.}
       \label{ASAP}
    \end{figure}
 
@@ -114,7 +114,7 @@ Ubuntu 14.04 Trusty, ROS Indigo and MCA2 are installed on it.
       \centering
       \includegraphics[width=0.5\textwidth]{graphics/SegwayPlattform.png}
       %\includegraphics[scale=1.0]{figurefile}
-      \caption{The Segway RMP-50 Omni Plattform includes Mecanum-Rad and Batterie.}
+      \caption[Segway RMP-50 Omni Plattform]{The Segway RMP-50 Omni Plattform includes Mecanum wheels and batteries.}
       \label{Omni}
    \end{figure}
 
