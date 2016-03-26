@@ -37,11 +37,11 @@ For full flexibility \texttt{kalman\_global} defines namespaces containing names
 Several IDs are listed in the \texttt{param} namespace: world, map, odom, frame and base link id. It also contains all service as well as topic names that the package listens on or publishes to:
 
 \begin{description}
-\item[``/vision/estimated\_pose''] Derived poses from the Kinect arrive here.
-\item[``/poseupdate''] The converter listens on this topic to receive poses from laser sensors. 
-\item[``laserProcessed''] The laser pose is converted to the same frame as the Kinect frame and re-published here for the EKF.
-\item[``/odometry/filtered''] The EKF publishes its filtered pose here.
-\item[``fused\_pose''] After the filtered data is converted to world frame, it is re-published here as final output.
+\item[``/vision/estimated\_pose''] Derived poses from the Kinect arrive here in \textbf{global frame}.
+\item[``/poseupdate''] The converter listens on this topic to receive poses from laser sensors in \textbf{local\_map frame}. 
+\item[``laserProcessed''] The laser pose is converted to the same frame as the Kinect frame (\textbf{global}) and re-published here for the EKF.
+\item[``/odometry/filtered''] The EKF publishes its filtered pose here in \textbf{local\_map}.
+\item[``fused\_pose''] After the filtered data is converted to \textbf{world frame}, it is re-published here as final output.
 \item[``/HL/is\_kidnapped''] The high level module publishes a flag on this topic whenever the kidnapping state changes.
 \item[``reset\_sensor\_srv''] Whenever the robot has recovered from kidnapped state this service can optionally be called to feed the position from kidnap recovery  into an artificial \textit{reset sensor} with very low covariances.
 \item[``reset\_sensor''] The reset position from above service is published to the EKF on this topic.
@@ -65,11 +65,11 @@ Several IDs are listed in the \texttt{param} namespace: world, map, odom, frame 
 
 This node is part of the ROS \texttt{robot\_localization} package and implements the \textit{Extended Kalman Filter} (EKF). An \texttt{ekf\_params.yaml} file configures it by defining initial estimate covariance, process noise covariances, queue sizes, publishing frequency and subscripted topics.
 
-It listens on the `laserProcessed'' topic to which the converter publishes frame-converted laser data. This is fused with the robot's odometry data from ``/robot/lauron/odom'' topic and ``/vision/estimated\_pose'' to which the vision module publishes poses derived from camera images.
+It listens on the `laserProcessed'' topic to which the converter publishes laser data that is converted from local\_map to global frame. This is fused with the robot's odometry data from \\ ``/robot/lauron/odom'' topic and ``/vision/estimated\_pose'' to which the vision module publishes poses derived from camera images.
 
 It is also subscripted to ``reset\_sensor''. Here a new position with very low covariances is optionally published to convince the filter to trust the pose obtained on kidnap recovery. Although this can be used to correctly reset the filter, another approach is currently active, see TODO.
 
-Finally, the fused pose is published to \textbf{``odometry/filtered''}.
+Finally, the fused pose is published to \textbf{``odometry/filtered''} in local\_map.
 
 \subsubsection{Converter Node}
 \begin{description}
@@ -88,9 +88,16 @@ Finally, the fused pose is published to \textbf{``odometry/filtered''}.
 	\end{itemize}
 \end{description}
 
-The converter node transforms laser input into the same frame as the pose from the vision module, then publishes it on ``laserProcessed'' for the EKF.
+The converter node has two tasks:
 
-It then listens on the EKF's result topic ``odometry/filtered'' to transform the filtered pose into the correct frame. This transformed result is published to ``fused\_pose'' and is used by the other modules as final pose estimation.
+\begin{enumerate}
+\item Transform sensor poses into a uniform frame for the EKF (global).
+\item Transform the EKF result into frame usable by the other modules (world)
+\end{enumerate}
+
+Specifically it transforms laser input into the same frame as the pose from the vision module (global), then publishes it on ``laserProcessed'' for the EKF.
+
+It then listens on the EKF's result topic ``odometry/filtered'' to transform the filtered local\_map pose into world frame. This transformed result is published to ``fused\_pose'' and is used by the other modules as final pose estimation.
 
 \subsubsection{set\_pose node -- kidnap reset}
 \begin{description}
