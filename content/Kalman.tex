@@ -176,7 +176,7 @@ This node tests pose reset in kidnapping situations. It calls the ``reset\_senso
 
 The effect of this call can be viewed in rviz where the fused pose's marker is expected to jump to the new pose. In figures \ref{Fig: Kalman Fusion - Low}, \ref{Fig: Kalman Fusion - Medium} and \ref{Fig: Kalman Fusion - High} this behavior is shown by displaying the position's x component over time. As before the \textbf{blue line} represents the position received from ``/vision/estimated\_pose'', the \textbf{red line} represents data received from ``laserProcessed'' and the \textbf{green line} is fused data of the kalman filter read from ``fused\_pose''.
 
-In the tests camera and laser pose estimation are artificially chosen wide apart. The camera pose is forced on kidnapping, because in such a situation it is trusted the most.
+In the tests camera and laser pose estimation are artificially chosen wide apart. The behavior of the kalman filter is shown if the input stream of ``laserProcessed'' stops for a while and starts sending again.
 
 As can be seen, the amount of time to jump back to normal pose increases with higher system confidence.
 
