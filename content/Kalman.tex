@@ -47,7 +47,7 @@ Several IDs are listed in the \texttt{param} namespace: world, map, odom, frame 
 \item[``reset\_sensor''] The reset position from above service is published to the EKF on this topic.
 \end{description}
 
-\subsubsection{Robot Localization Node}
+\subsubsection{Robot Localization Node (EKF)}
 \begin{description}
 \item[Subscriptions]\
 \begin{itemize}
@@ -97,7 +97,16 @@ The converter node has two tasks:
 
 Specifically it transforms laser input into the same frame as the pose from the vision module (global), then publishes it on ``laserProcessed'' for the EKF.
 
-It then listens on the EKF's result topic ``odometry/filtered'' to transform the filtered local\_map pose into world frame. This transformed result is published to ``fused\_pose'' and is used by the other modules as final pose estimation.
+It then listens on the EKF's result topic ``odometry/filtered'' to transform the filtered local\_map pose into world frame. This transformed result is published to ``fused\_pose'' and is used by the other modules as final pose estimation. Figure \ref{ekf - converter} summarizes interaction between converter and EKF.
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=\textwidth]{graphics/ekf_converter.pdf}
+\caption[EKF -- Converter interaction]{Interaction between EKF and Converter: The converter transforms laser data and EKF output into desired frames.}
+\centering
+\label{ekf - converter}
+\end{figure}
+
 
 \subsubsection{set\_pose node -- kidnap reset}
 \begin{description}
