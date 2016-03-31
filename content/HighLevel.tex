@@ -1,63 +1,218 @@
 \chapter{High Level}
+
 \section{Overview}
-High level part is responsible for the detection and recovery of Kidnap, which need the information from Kalman Filter and MCA\_ROS\_Bridge. The pose information can be obtained from EKF which merges the result from Kalman Filter in MCA and the output from Kinect. Besides, the data from odometry and laser scanner can be acquired through MCA. With the help of \texttt{spinner()} in ROS, the subscription of the topics from other groups and the publishment of our topics to other groups can be achieved in parallel . The structure of the whole software system is showed in Figure \ref{System}
+The goal of the following chapter is to describe the high level functionality of the whole system. The kidnapped robot problem is still quite an open issue in the Robotic Community and consequently the solution presented is quite conceptual. To tackle the problem the functionality has been divided into two main parts. The first one is detection of the kidnapping situation and the second one is recovery from this state. Information sources available for these tasks consist of MCA odometry and laser data, data from Kinect and finally fused data from Extended Kalman Filter. The pose information can be obtained from EKF which merges the result from Kalman Filter in MCA and the output from Kinect. The data from odometry and laser scanner can be acquired through MCA. 
+
+The structure of the whole system is shown in Figure \ref{System}. Section \ref{implementation} provides information about implementation of detection and recovery tasks. It describes interaction with other modules of the project and the concepts of actions taken by the robot itself. Section \ref{problems} describes problems and difficulties met mainly during testing process.
+
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.4\textwidth]{graphics/system.png}
-\caption{The structure of the whole software system}
+\includegraphics[width=0.9\textwidth]{graphics/system.png}
+\caption{Overview of the system}
 \label{System}
 \centering
 \end{figure}
 
-\section{Implementation}
+\section{Implementation} \label{implementation}
 \subsection{Detection}
-Kidnap\_Detection was the first step that we used to solve kidnap problem. In this section, three criteria were taken into account to detect kidnap situation, namely timestamp of odometry, unexpected marker and hoch covariance. First of all, robot would regularly compare the current time with the timestamp of last message on topic \texttt{/robot/lauron/odom}. The difference between these two timestamps means that the robot has received no data from odometry for a while, which is most likely because of kidnap situation. Secondly, the robot subscribed the topic \texttt{/vision/unexpected\_marker}. When the robot receives an unexpected marker, it will be detected as kidnapped. Unexpected marker only occurs in such situation that the pose in robot’s mind is different from the real pose. When robot gets an unexpected marker, the covariance information on the topic \texttt{/kalman/fused\_pose} will be stored as the threshold for the third criterion. Kidnap situation happens normally with the hoch covariance of pose. With the saved covariance, robot can detect kidnap situation when the covariance is large enough. Because random variables are independent, there exists only the variance of random variables in the covariance matrix. We didn’t consider the variance of Yaw, because these data from MCA were with large fluctuation thus not reliable through the observation. This is also the reason why we saved the covariance matrix from Kalman Filter on receiving the unexpected marker rather than the timestamps. The detection will be done if some new information arrives. When no new data come, the Kidnap\_detection is done every 2 seconds.
+The detection was the first step used to solve the problem and was realised inside of the \texttt{kidnap\_detection} node of ROS. 
 
-In the beginning, we searched for some detection methods through papers, then finally decided to use the “strong change of covariance” as our kidnap detection criterion, which can be represented in a second-order derivative. However, we could only obtain a little data from Kalman Filter about kidnap situation, so it was difficult to define “strong” with the real data. Therefore, we directly used the covariance matrix. There are still some other methods to achieve the detection such as using the Map-Matching confidence rate, particle filter.
+\subsubsection{Interface}
+\begin{description}
+\item[List of subscribers]\
+	\begin{itemize}
+	\item ``/kalman/fused\_pose'' 
+	\item ``/vision/unexpected\_marker'' 
+	\item ``/poseupdate'' 
+	\item ``/HL/is\_kidnapped''
+	\end{itemize}
+\end{description}
+
+This node communicates through subscribers and publisher listed above. The topic \texttt{/kalman/fused\_pose} delivers the pose fused by Exteded Kalman Filter from MCA and Kinect data. The information about unexpected marker found is delivered as a flag in the topic \texttt{/vision/unexpected\_marker}. The odometry data from the topic \texttt{/poseupdate} deliveres the timestamp needed for calculations. 
+
+\begin{description}
+\item[List of publishers]\
+	\begin{itemize}
+	\item ``/HL/is\_kidnapped''
+	\end{itemize}
+\end{description}
+
+The flag about kidnap situation in the topic \texttt{/HL/is\_kidnapped} is used for the internal communication of the high level nodes, so it is both published and subscribed by the \texttt{kidnap\_detection} node.
+
+\subsubsection{Concept}
+Three criteria were taken into account to detect the kidnap situation: timestamp of odometry, unexpected marker and big covariance.
+
+\begin{itemize}
+\item Firstly, the robot regularly compares the current time of odometry data with the timestamp of last message it received from the topic \texttt{/robot/lauron/odom}. The difference between these two timestamps is compared to a certain threshold. If threshold is exceeded means, that robot has not received data from odometry for a while and is interpreted as kidnapping. The covariance information from the topic \texttt{/kalman/fused\_pose} shall represent that situation in its values since kidnap situation happens with high covariance of the pose. The current variances in x and y directions are then used for setting the threshold stored for the third criterion.
+The variance of Yaw is not considered because these data from MCA have large fluctuation and are not reliable for the observation. This is also the reason why the covariance matrix from Kalman Filter on receiving the unexpected marker is saved rather than the timestamps.
+\item Secondly, the robot subscribes the topic \texttt{/vision/unexpected\_marker}. If the unexpected marker is received, it indicates the kidnapping situation (since there is a known map of markers in the global map). Unexpected marker only occurs in a situation that the pose supposed by the robot is different from the real pose. If so happens, the covariance information from the topic \texttt{/kalman/fused\_pose} is again stored as the threshold for the third criterion.
+\item Thirdly, the robot gets constantly the covariance information from the topic \texttt{/kalman/fused\_pose}. If it suddenly contains values that exceed the saved threshold, it is considered as a kidnapping too.
+\end{itemize}
+
+The detection is done at the arrival of some new information. Otherwise, when no new data come, the kidnap detection is done every 2 seconds.
+ 
+In the beginning, we searched for some detection methods in the literature and publications, then finally decided to use the “strong change of covariance” as our kidnap detection criterion, which can be represented in a second-order derivative. However, we could only obtain a little data from Kalman Filter about kidnap situation, so it was difficult to define how “strong” is strong with the real data. Therefore, we directly used the covariance matrix. There are still some other methods to achieve the detection such as using the Map-Matching confidence rate or with help of particle filter.
 
 \subsection{Recovery}
+The recovery was the second step used to solve the problem and was realised inside of the \texttt{kidnap\_recovery} node of ROS. With the help of \texttt{spinner()} , the subscribing of the topics from other modules and publishing to them could be achieved in parallel using multithreading feature of \texttt{ROS}. 
+
+\subsubsection{Interface}
+\begin{description}
+\item[List of subscribers]\
+	\begin{itemize}
+	\item ``/laser\_vor/scan'' 
+	\item ``/laser\_hinter/scan'' 
+	\item ``/HL/laser\_data\_obtained'' 
+	\item ``/robot/lauron/odom'' 
+	\item ``/vision/sees\_marker'' 
+	\item ``/vision/estimated\_pose'' 
+	\item ``/HL/is\_kidnapped'' 
+	\item ``/poseupdate'' 
+	\item ``/HL/is\_kidnapped'' 
+	\end{itemize}
+\end{description}	
+	
+This node communicates through subscribers and publisher listed above. The data from both front and back laser sensors is obtained through topics \texttt{/laser\_vor/scan} and \texttt{/laser\_hinter/scan} and the flag in the topic \texttt{/HL/laser\_data\_obtained} indicates whether the delivery was successful. The odometry data is obtained from the topic \texttt{/robot/lauron/odom}. The subscriptions to the vision module consist of topic indicating whether a marker is seen in the environment and another one delivering the pose estimated with Kinect, being \texttt{/vision/sees\_marker} and \texttt{/vision/estimated\_pose} respectively. The topic \texttt{/HL/is\_kidnapped} serves the communication with detection node. If the robot is kidnapped, the flag is set to true and the callback starts recovery procedure. Due to the fact that calculations in the recovery node are in local coordinate system, \texttt{/HL/is\_kidnapped} is also used to trigger the transformation from world coordinates. After the recovery, the inverse transformation returns in result the pose in world coordinates again.
+
+\begin{description}	
+\item[List of publishers]\
+	\begin{itemize}
+	\item ``/robot/lauron/cmd\_vel''
+	\item ``/HL/laser\_data\_obtained''
+	\item ``/HL/is\_kidnapped''
+	\item ``/vision/unexpected\_marker''
+	\item ``/initialpose''
+	\item ``/tf''
+	\end{itemize}
+\end{description}
+
+The node publishes the twist directly to the robot with the topic \texttt{/robot/lauron/cmd\_vel}. Further, information about successful data delivery from laser sensors is indicated with the topic \texttt{/HL/laser\_data\_obtained}. Robot's initial pose is published as \texttt{/initialpose} and the transformation between local and world coordinate systems as \texttt{/tf}. If an unexpected marker has been detected, it is passed further in the \texttt{/vision/unexpected\_marker} topic, and for internal communication with the detection node as well as for other modules the kidnap state is reported with \texttt{/HL/is\_kidnapped}.
+
 \subsubsection{Concept}
-Kidnap\_Recovery is the second step to solve the kidnap problem. After determining whether kidnapped, Pfosten will go over the whole room to search for QR code or other features, through which  Pfosten can relocalize and set a new pose up. The basic concept to achieve this goal is a maze-solving algorithm, which keeps the robot moving along the left side of obstacles. This algorithm will be described in details in the next capital. The robot should go over every corner without colliding with obstacles, so it needs some sensors such as laser scanner and odometry. Finally, after seeing the marker, the exploration comes to end and Pfosten calculates the transformation between Frame  \texttt{/local\_map} and \texttt{/global\_map} instead of setting a pose. Concerning about safety, various driving speeds were defined in the exploration for the robot in different zones, which depend on the distances to the obstacles in the environment. Figure \ref{Zone} details this idea. The closer the robot is to the obstacle, the slower it is. When the distance between the laser scanner and the obstacle becomes less than 0.11m, the robot should stop. When distance is less than 0.3m, the robot should move slowly.
+The process of relocalization is triggered if the topic \texttt{/HL/is\_kidnapped} indicates a kidnapping situation. After determining whether kidnapped, the robot goes over the whole room to search for QR code or other features thanks to which it can relocalize. The basic concept to achieve this goal is a maze-solving algorithm, which keeps the robot moving to the left side along the obstacles. The robot should go over every corner without colliding with obstacles and uses for it the information from laser scanners and odometry. After eventually seeing the marker, the exploration comes to an end and transformation is calculated between frames \texttt{/local\_map} and \texttt{/global\_map}. Considering safety aspects, various driving speeds were defined for the exploration by the robot in different zones, depending on the distances to the obstacles in the environment. The closer the robot is to the obstacle, the slower it is. When the distance between the laser scanner and the obstacle becomes less than 0.11 meter, the robot should stop. When distance is less than 0.3 meter, the robot should move slowly.
+
+The algorithm is implemented as a function \texttt{startRecovery()} and its flow is presented in Figure \ref{start_recovery} with its steps in the following description:
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.4\textwidth]{graphics/Zone.png}
-\caption{Definition of various speeds depending on obstacles}
-\label{Zone}
+\includegraphics[width=0.7\textwidth]{graphics/start_recovery.png}
+\caption{Recovery algorithm}
+\label{start_recovery}
 \centering
 \end{figure}
 
-\subsubsection{Initial Actions}
-Firstly, Pfosten stops after noticing Kidnap and then rotates itself to observe the environment, as shown in Figure \ref{sensor}. The distance between the obstacle and the robot, read from laser scanner, will be stored in the robot. After 360 degrees, the minimal distance and the angle will be filtered as \texttt {best\_angle}, which is shown in Figure \ref{best}. The robot rotates continually to \texttt {best\_angle} and goes forward to this obstacle. When the robot is near the obstacle, it will adjust itself until it is parallel to the edge of the obstacle, which is detailed in Figure \ref{parallel}.
+\begin{description}
+\item[initTempVariables()] The function initializes the internal temporary data. 
+\item[stopUntilStopped()] The function stops the robot. It is realised by publishing linear and angular twist of the robot as zero. Because a simple publishing would result in the code to continue its execution, the function waits until the robot really stops. The threshold is set so that a negligibly small value of twist is recognized as zero.
+\item[lookAround()] The function causes the robot to make the full 360$^{\circ}$ rotation to observe the environment. As shown in Figure \ref{sensor} the front left sensor covers mostly left and front of the robot and can detect the red dots, while the back right sensor covers mainly the right and back of the robot and can detect the blue dots. The regions of overlap can be detected by both sensors. After rotation the robot stops. In the meanwhile, the laser scanners scan environment and save the data with a given sampling rate, ranges being expressed in meters. For the proper format of the data, the angles are normalized. FIXME
+\item[moveTowards(findBestAngle())] The function takes as an argument the best found angle and compares with the robot's actual orientation. Robot then rotates to the target angle and goes with the defined velocity \texttt{DEFAULT\_FORWARD\_VELOCITY}
+ until it finds itself in the area where it has to slow down, and finally in the distance to the obstacle where it has to stop. The "speed" areas are shown in Figure \ref{Zone}, and the thresholds are respectively \texttt{MIN\_FRONT\_DISTANCE} and \texttt{MIN\_CAUTION\_DISTANCE}. 
+ Finding of the best angle is simply calculating the minimum distance among sampled scans and returning its angle, as shown in Figure \ref{best}, now in milimeters. Due to laser properties negligibly small distances are not considered.
+\item[rotateFrontParallel()] The function rotates the robot until it is aligned parallel to the obstacle with its front, as shown in Figure \ref{parallel}. Merged information from both front and back lasers are used. Two points that are spot in front interval of the robot and have the smallest distance are considered a pair from which an average is calculated. That average is treated as a pivot point of the robot rotation. Points which are detected around the pivot are grouped into either left or right side and averaged again. The resulting final left and right average points form a vector to which the robot has to align itself. The averaging adds robustness to the process and tackles the problem of longitudinal inaccuracy of the laser scans.
+\item[goForward()] The function moves the robot forward with the give given \texttt{DEFAULT\_FORWARD\_VELOCITY}.
+\item[isKidnapped] The flag indicates whether kidnap situation has been detected, subscribed from the topic \texttt{/HL/is\_kidnapped}.
+\item[seesMarker] The flag indicates whether the QR marker was seen by the vision module, subscribed from the topic \texttt{/vision/sees\_marker}.
+\item[moveForward()] The function constitutes a core of the recovery algorithm and is described later on.
+\item[doFoundMarker()] The function reacts in a situation where QR marker was seen/ It stops for 0.5 second and publishes that robot is not kidnapped anymore.
+\item[publishFalseUnexpectedMarker()] The function communicates with the vision module by publishing to the topic \texttt{/vision/unexpected\_marker} that an unexpected marker was seen.
+\end{description}
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.4\textwidth]{graphics/sensoren.png}
-\caption{Observation of the environment}
+\includegraphics[width=0.7\textwidth]{graphics/sensoren.png}
+\caption{Observing of the environment}
 \label{sensor}
 \centering
 \end{figure}
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.4\textwidth]{graphics/find_best_angle.png}
-\caption{Find best\_angle}
+\includegraphics[width=0.5\textwidth]{graphics/find_best_angle.png}
+\caption{Finding of best\_angle}
 \label{best}
 \centering
 \end{figure}
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.4\textwidth]{graphics/front_parallel.png}
-\caption{Rotate to fit the obstacle}
+\includegraphics[width=0.5\textwidth]{graphics/front_parallel.png}
+\caption{Rotating to align front parallel to the obstacle}
 \label{parallel}
 \centering
 \end{figure}
 
-\subsubsection{Exploration}
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.6\textwidth]{graphics/Zone.png}
+\caption{Defining of various speeds depending on the distance to the obstacle}
+\label{Zone}
+\centering
+\end{figure}
 
-\section{Problems and Difficulties}
+As mentioned before the core of the recovery algorithm is the function \texttt{moveForward()}. Its logic is depicted in Figure \ref{move_forward} and its single steps in the following description:
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.9\textwidth]{graphics/move_forward.png}
+\caption{Core step of the recovery algorithm}
+\label{move_forward}
+\centering
+\end{figure}
+
+\begin{description}
+\item[checkFreeSpaceLeft()] The function checks if there is a free space on the left side of the robot. It is calculated by considering all the points that are located within the left interval, so "beside" of the robot. The one with the minimal distance to the robot is taken and if that is far enough, free space is detected.
+\item[stopUntilStopped()] The function stops the robot. It is realised by publishing linear and angular twist of the robot as zero. Because a simple publishing would result in the code to continue its execution, the function waits until the robot really stops. The threshold is set so that a negligibly small value of twist is recognized as zero.
+\item[moveBackwardSlowlyDetectFreeSpaceLeft()] The function makes the robot to go back slowly a little bit which could compensate its dynamics while it found the free space on the left. Going backward with velocity  \texttt{-SLOW\_BACKWARD\_VELOCITY} happens until free space is detected and until chosen time \texttt{BACKWARD\_PAUSE} elapses. The presence of free space shall be obvious if nothing changed, since it was already detected before.
+\item[faceLeft()] The function simply rotates 90$^{\circ}$ counterclockwise so that the robot faces the free space it detected.
+\item[moveForwardSlowlyUntilNearbyLeftObstacleFound()] The function moves the robot slowly forwards until the nearby obstacle is detected there. The blind spot interval is introduced where points are not considered yet in front nor already on the left side. The function \texttt{checkObstacleLeftFrontBlindSpot()} checks points in that interval and if there is any obstacle closer than chosen \texttt{FREE\_LEFT\_SPACE\_DISTANCE} it makes the robot to rotate 4$^{\circ}$ clockwise, otherwise 8$^{\circ}$ counterclockwise. This solution prevents a situation where the robot moves on without noticing an obstacle in its blind spot. Different angle values take care for non-ambiguous classification of points located there to one of the other intervals, front or left.
+\item[robotIsStopped] The flag indicates if the robot is stopped or not yet. That depends on the values of linear twist compared to zero in function \texttt{isStopped()}
+\item[robotShouldStop] The flag indicates if the robot should stop. It is so if its current distance to the closest obstacle is not bigger than \texttt{MIN\_CAUTION\_DISTANCE}, chosen to be 0.11 meter.
+\item[rotateFrontParallel()] The function rotates the robot until it is aligned parallel to the obstacle with its front, as shown in Figure \ref{parallel}. Merged information from both front and back lasers are used. Two points that are spot in front interval of the robot and have the smallest distance are considered a pair from which an average is calculated. That average is treated as a pivot point of the robot rotation. Points which are detected around the pivot are grouped into either left or right side and averaged again. The resulting final left and right average points form a vector to which the robot has to align itself. The averaging adds robustness to the process and tackles the problem of longitudinal inaccuracy of the laser scans.
+\item[adjust()] The function consists of two subtasks: \texttt{rotateLeftParallel()} and \texttt{adjustLeftDistance()}. The first one makes robot to correct its orientation to maintain its left side in parallel manner to the obstacle. The second one makes robot to maintain a proper distance to that obstacle. It must be enough to eventually rotate, but not too much since maze-algorithm implementation wants the robot to follow along the obstacle on the left side. Meanwhile in function \texttt{checkRightObstacle()} there is also check if there is no obstacle on the immediate right of the robot, so that it can adjust its left distance.  To maintain left side parallel a vector is needed to define the correcture rotation, as shown in Figure \ref{rotate_left_parallel02}. Here as well merged information from both front and back lasers are used. Considered are those points that are placed on the left side of the robot. Half of them form the left group, another half the right group. The average point is computed for each of both groups and the two points form the needed vector. However the points cannot be placed too far away from each other, as it could indicate another obstacle behind the main one, as shown in Figure \ref{rotate_left_parallel01}. Including such points into average calculation would corrupt the result and deliver an undesired rotation angle.
+\item[robotShouldGoSlower()]  The flag indicates if the robot should stop. It is so if its current distance to the closest obstacle is not bigger than \texttt{MIN\_FRONT\_DISTANCE}, chosen to be 0.3 meter. 
+\item[goSlower()] The function simply makes robot go forward with the given velocity \texttt{SLOW\_FORWARD\_VELOCITY}
+\item[goForward()] The function simply makes robot go forward with the given velocity \texttt{DEFAULT\_FORWARD\_VELOCITY} 
+\end{description}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.5\textwidth]{graphics/betrachteter_bereich.png}
+\caption{Considering buffer area on the right}
+\label{betrachteter_bereich}
+\centering
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.7\textwidth]{graphics/rotate_left_parallel02.png}
+\caption{Rotating to align left side parallel to the obstacle}
+\label{rotate_left_parallel02}
+\centering
+\end{figure}
+
+\begin{figure}[ht]
+\centering
+\includegraphics[width=0.6\textwidth]{graphics/rotate_left_parallel01.png}
+\caption{Result of the obstacle scanning on the left side of the robot}
+\label{rotate_left_parallel01}
+\centering
+\end{figure}
+
+Due to the fact that algorithm follows to the left side and the robot rotates clockwise, the front of the robot is a bit asymmetric as shown in Figure \ref{betrachteter_bereich}. There is a bit more space on the right to make sure that the robot is able to rotate any time it needs.
+
+\section{Problems and Difficulties} \label{problems}
+During our work we met various difficulties of the workplace and its environment and we list them in the following subsections.
+
 \subsection{Calibration}
+Two laser scanners of the robot turned out to be not calibrated properly. Due to lack of documentation of configuration files we spent a big amount of time searching the proper ones by changing the values and observing the results in \texttt{RVIZ}. Physical alignment was also needed to keep the right angles with respect to the robot's body. If not calibrated properly, laser sensors would deliver the point clouds which do not represent the obstacles properly. For example boxes placed parallel to the robot would not be parallel in the environment visualization. Wrong calibration could be also easily seen in the areas where the data of front and back sensor overlap. If we put the obstacle in such area and observed points from both sensors that would overlap in \texttt{RVIZ} we knew that sensors were properly calibrated.
+
 \subsection{Floor Level}
+In HoLL there is an inclination in the middle of the corridor. Since the laser sensors operate on one specific height, from a certain point the inclination was detected as an obstacle, just the same as any wall around. To avoid this, the proper interpretation of the distance measure had to be considered.
+When robot was going down and was instructed to stop, its wheels did not stop completely at once and it was actually coasting for some time.
+
 \subsection{Uneven Surface}
+Another difficulty for the robot and for us was the uneven surface. When trying to drive over it or rotate on it, very often happened that the wheels were spinning in the air and the information coming from odometry did not reflect the reality anymore. It made problems for both rotation and translation actions. Often happened also situations, where the robot tried to move forward but it couldn't and moved backward due to false odometry readings. Consequently, the next information it obtained about obstacles was irrelevant and resulted in a wrong behaviour.
+
 \subsection{Transparent Window}
+Final difficulty we met were the transparent windows around in HoLL. One obvious reason was the danger of destroying them, especially in the initial phase of interaction with the robot and the initial version of the algorithm which we started to test. The problem for the robot was, that the laser sensors did not recognize glass and delivered point clouds not precise to the position of the windows. To solve this problem we were using styrofoams and cardboards which we found around to protect the windows and build provisoric walls that laser sensors could detect.
+
