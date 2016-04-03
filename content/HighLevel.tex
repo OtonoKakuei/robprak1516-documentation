@@ -1,11 +1,9 @@
 \chapter{High Level}
 
 \section{Overview}
-This chapter explains the role of the High Level group in the whole system. The kidnapped robot problem is still quite an open issue in the robotics community and consequently the solution presented is quite conceptual. In order to solve the problem, our group decided to divide the kidnapping problem into two parts: detection of the kidnapping situation; and recovery from being kidnapped. 
+This chapter explains the role of the High Level group in the whole system. The kidnapped robot problem is still quite an open issue in the robotics community and consequently the solution presented is quite conceptual. In order to solve the problem, our group decided to divide the kidnapping problem into two parts: detection of the kidnapping situation; and recovery after being kidnapped. Information sources available for these tasks consist of odometry data, laser data, hector\_mapping data, data from the Vision group and data from the Kalman group.
 
-Information sources available for these tasks consist of odometry data, laser data, data from the Vision group and data from the Kalman group. The pose information can be obtained from EKF, which merges the pose obtained from the hector slam mapping and the estimated pose given by the Vision group. The data from odometry and laser scanner . 
-
-The structure of the whole system is shown in Figure \ref{System}. Section \ref{implementation} provides information about the implementation of detection and recovery tasks. It describes interaction with other modules of the project and the concepts of actions taken by the robot itself. Section \ref{problems} describes problems and difficulties met mainly during testing process.
+The structure of the whole system is shown in Figure \ref{System}. Section \ref{section:concept} gives out some basic ideas on how the kidnapping problem can be solved. Section \ref{section:relevant_ros_topics} lists the ROS topics that were used in the implementation. Section \ref{implementation} provides information of how the detection and recovery tasks were implemented. Section \ref{problems} describes the problems and difficulties met mainly during the testing process.
 
 \begin{figure}[htb]
 \centering
@@ -15,88 +13,12 @@ The structure of the whole system is shown in Figure \ref{System}. Section \ref{
 \centering
 \end{figure}
 
-\section{Implementation} \label{implementation}
-\subsection{Detection}
-The detection was the first step used to solve the problem and was realized inside of the \texttt{kidnap\_detection} node of ROS. 
-
-\subsubsection{Interface}
-\begin{description}
-\item[List of subscribed topics]\
-	\begin{itemize}
-	\item ``/kalman/fused\_pose'' 
-	\item ``/vision/unexpected\_marker'' 
-	\item ``/poseupdate'' 
-	\item ``/HL/is\_kidnapped''
-	\end{itemize}
-\end{description}
-
-This node communicates through subscribers and publisher listed above. The topic \texttt{/kalman/fused\_pose} delivers the pose fused by Extended Kalman Filter from MCA and Kinect data. The information about unexpected marker found is delivered as a flag in the topic \texttt{/vision/unexpected\_marker}. The odometry data from the topic \texttt{/poseupdate} deliveres the timestamp needed for calculations. 
-
-\begin{description}
-\item[List of published topics]\
-	\begin{itemize}
-	\item ``/HL/is\_kidnapped''
-	\end{itemize}
-\end{description}
-
-The flag about kidnap situation in the topic \texttt{/HL/is\_kidnapped} is used for the internal communication of the high level nodes, so it is both published and subscribed by the \texttt{kidnap\_detection} node.
-
-\subsubsection{Concept}
-Three criteria were taken into account to detect the kidnap situation: timestamp of odometry, unexpected marker and big covariance.
-
-\begin{itemize}
-\item Firstly, the robot regularly compares the current time of odometry data with the timestamp of last message it received from the topic \texttt{/robot/lauron/odom}. The difference between these two timestamps is compared to a certain threshold. Exceeding the threshold means, that the robot has not received data from odometry for a while and is interpreted as kidnapping. The covariance information from the topic \texttt{/kalman/fused\_pose} shall represent that situation in its values since kidnap situation happens with high covariance of the pose. The current variances in x and y directions are then used for setting the threshold stored for the third criterion.
-The variance of Yaw is not considered because these data from MCA have large fluctuation and are not reliable for the observation. This is also the reason why the covariance matrix from Kalman Filter on receiving the unexpected marker is saved rather than the timestamps.
-\item Secondly, the robot subscribes to the topic \texttt{/vision/unexpected\_marker}. If an unexpected marker is received, it indicates a kidnapping situation (since there is a known map of markers in the global map). Unexpected markers only occur in a situation that the assumed pose by the robot is different from the real pose. If so happens, the covariance information from the topic \texttt{/kalman/fused\_pose} is again stored as the threshold for the third criterion.
-\item Thirdly, the robot constantly receives covariance information from the topic
-\\
-\texttt{/kalman/fused\_pose}. If it suddenly contains values that exceed the saved threshold, it is considered as a kidnapping too.
-\end{itemize}
-
-The detection is done at the arrival of some new information. Otherwise, when no new data arrives, the kidnap detection is executed every 2 seconds.
- 
-In the beginning, we searched for some detection methods in the literature and publications, then finally decided to use the ``strong change of covariance'' as our kidnap detection criterion, which can be represented in a second-order derivative. However, we could only obtain little data from Kalman Filter about a kidnap situation, so it was difficult to define how strong is ``strong'' when working with real data. Therefore, we directly used the covariance matrix. There are still some other methods to achieve the detection such as using the Map-Matching confidence rate or with help of a particle filter.
-
-\subsection{Recovery}
-Recovery was the second step used to solve the problem and was realized inside of the
-\\
-\texttt{kidnap\_recovery} node of ROS. With the help of \texttt{spinner()} , subscription to the topics from other modules and publishing to them could be achieved in parallel using the multithreading feature of \texttt{ROS}. 
-
-\subsubsection{Interface}
-\begin{description}
-\item[List of subscribed topics]\
-	\begin{itemize}
-	\item ``/laser\_vor/scan'' 
-	\item ``/laser\_hinter/scan'' 
-	\item ``/HL/laser\_data\_obtained''
-	\item ``/robot/lauron/odom''
-	\item ``/vision/sees\_marker'' 
-	\item ``/vision/estimated\_pose'' 
-	\item ``/HL/is\_kidnapped'' 
-	\item ``/poseupdate'' 
-	\item ``/HL/is\_kidnapped'' 
-	\end{itemize}
-\end{description}	
-	
-This node communicates through subscribers and publishers listed above. The data from both front and back laser sensors is obtained through topics \texttt{/laser\_vor/scan} and
-\\
-\texttt{/laser\_hinter/scan} and the flag in the topic \texttt{/HL/laser\_data\_obtained} indicates whether the delivery was successful. Odometry data is obtained from the topic \texttt{/robot/lauron/odom}. The subscriptions to the vision module consist of a topic indicating whether a marker is seen in the environment and another one delivering the pose estimated with Kinect, being \texttt{/vision/sees\_marker} and \texttt{/vision/estimated\_pose} respectively. The topic \texttt{/HL/is\_kidnapped} serves as communication with the detection node. If the robot is kidnapped, the flag is set to true and the subscription callback starts recovery procedure. Due to the fact that calculations in the recovery node are in local coordinate system, \texttt{/HL/is\_kidnapped} is also used to trigger the transformation from world coordinates. After the recovery, the inverse transformation returns the pose in world coordinates again.
-
-\begin{description}	
-\item[List of published topics]\
-	\begin{itemize}
-	\item ``/robot/lauron/cmd\_vel''
-	\item ``/HL/laser\_data\_obtained''
-	\item ``/HL/is\_kidnapped''
-	\item ``/vision/unexpected\_marker''
-	\item ``/initialpose''
-	\item ``/tf''
-	\end{itemize}
-\end{description}
-
-The node publishes the twist directly to the robot with the topic \texttt{/robot/lauron/cmd\_vel}. Further, information about successful data delivery from laser sensors is indicated with the topic \texttt{/HL/laser\_data\_obtained}. Robot's initial pose is published as \texttt{/initialpose} and the transformation between local and world coordinate systems as \texttt{/tf}. If an unexpected marker has been detected, it is passed further in the \texttt{/vision/unexpected\_marker} topic, and for internal communication with the detection node as well as for other modules the kidnap state is reported with \texttt{/HL/is\_kidnapped}.
-
-\subsubsection{Concept}
+\section{Concept} \label{section:concept}
+%start qing
+\subsection{Kidnap Detection}
+In order to detect the kidnap situation, the landmarks could be collected and used to verify kidnap situation. When landmarks are different from the pose where the robot is, the robot is probably kidnapped. Additionaly, the sensors are also observed because the breakdown of sensors can lead to kidnap situation. Besides, the map matching rate can also be used to detect kidnaping. In our implementation, we have chosen three criteria, namely timestamp of messages from laser scanner, unexpected marker from kinect camera, and the covariance matrix of fused pose from kalmann filter group. They will be explained in detail later (Subsection \ref{subsection:implementation_detection}).  
+%end qing
+\subsection{Kidnap Recovery}
 The process of relocalization is triggered if the topic \texttt{/HL/is\_kidnapped} indicates a kidnapping situation. After determining whether the robot is kidnapped, it travels the whole room to search for QR codes or other features which it can use relocalize itself. The basic concept to achieve this goal is a maze-solving algorithm, which keeps the robot moving on the left side along obstacles. The robot should go over every corner without colliding with obstacles. It achieves this by using the information from laser scanners and odometry. After eventually seeing the marker, the exploration comes to an end and transformation is calculated between frames \texttt{/local\_map} and \texttt{/global\_map}. Considering safety aspects, various driving speeds were defined for the exploration by the robot in different zones, depending on the distances to the obstacles in the environment. The closer the robot is to the obstacle, the slower it is. When the distance between the laser scanner and the obstacle becomes less than 0.11 meter, the robot should stop. When distance is less than 0.3 meter, the robot should move slowly.
 
 %Basic functions FIXME
@@ -113,20 +35,120 @@ The process of relocalization is triggered if the topic \texttt{/HL/is\_kidnappe
 %rotate()
 %and so on
 
-The algorithm is implemented as a function \texttt{startRecovery()} and its flow is presented in Figure \ref{start_recovery} with its steps in the following description:
+
+
+\section{Relevant ROS Topics}\label{section:relevant_ros_topics}
+
+\subsection{Kidnap Detection}
+The followings are the topics that were used and published by \texttt{kidnap\_detection}. The callbacks are done by using \texttt{ros::AsyncSpinner}, which allows parallel asynchronous callbacks to be performed.
+
+
+\begin{description}
+\item[List of subscribed topics]\
+	\begin{itemize}
+	\item  \textbf{``/kalman/fused\_pose''}: delivers the pose fused by the Kalman group. It is used by the robot to determine its current position.
+	\item  \textbf{``/poseupdate''}: delivers the current pose data based on hector\_mapping. Its timestamp is the only thing that will be used by this node.
+	\item  \textbf{``/vision/unexpected\_marker''}: if an unexpected marker is seen, \{\texttt{std\_msgs/Bool} data: True\} will be published to the topic.
+	\item  \textbf{``/HL/is\_kidnapped''}: shows whether the robot is kidnapped. Kidnap detection will not be performed if the robot is currently kidnapped.
+	\end{itemize}
+\end{description}
+
+\begin{description}
+\item[List of published topics]\
+	\begin{itemize}
+	\item \textbf{``/HL/is\_kidnapped''}: the result of the kidnap detection will be published here.
+	\end{itemize}
+\end{description}
+
+\subsection{Kidnap Recovery}
+
+The followings are the topics that were used and published by \texttt{kidnap\_recovery}. The callbacks are done by using \texttt{ros::AsyncSpinner}, which allows parallel asynchronous callbacks to be performed.
+
+\begin{description}
+\item[List of subscribed topics]\
+	\begin{itemize}
+	\item \textbf{``/laser\_vor/scan''}: delivers the front laser scanner's data as \texttt{sensor\_msgs/LaserScan}. The laser data obtained from this topic will be mainly used to get the distance information of the obstacles located in front and to the left of the robot.
+	\item \textbf{``/laser\_hinter/scan''}: delivers the back laser scanner's data as \texttt{sensor\_msgs/LaserScan}. The laser data obtained from this topic will be mainly used to support the laser data obtained from the front laser scanner.
+	\item \textbf{``/HL/laser\_data\_obtained''}: indicates that data from one of the laser scanners have been obtained. This topic is used internally so that asynchronous callbacks can work correctly.
+	\item \textbf{``/robot/lauron/odom''}: delivers the odometry data \texttt{nav\_msgs/Odometry}.
+	\item \textbf{``/vision/sees\_marker''}: \{\texttt{std\_msgs/Bool} data: True\} will be published to the topic as long as the robot keeps seeing a QR marker. Used as an indicator to trigger some of the robot's behaviours (e.g. stopping).
+	\item \textbf{``/vision/estimated\_pose''}: delivers the current pose of the robot on the global map, as was estimated by the Vision group. This pose will be deemed the most trustworthy by the robot and will be used, along with the current local pose of the robot, to calculate the transformation matrix needed to transform poses in the local map to the global map.
+	\item \textbf{``/poseupdate''}: delivers the current pose data based on hector\_mapping. This pose represents the current pose of the robot in the local map, which will also be used, along with the estimated pose from the Vision group, to calculate the local to global map transformation matrix.
+	\item \textbf{``/HL/is\_kidnapped''}: if \{\texttt{std\_msgs/Bool} data: True\}, then the kidnap recovery procedure will be started. Otherwise, this node will just publish the last local to global /tf data that it has calculated.
+	\end{itemize}
+\end{description}
+
+\begin{description}	
+\item[List of published topics]\
+	\begin{itemize}
+	\item \textbf{``/robot/lauron/cmd\_vel''}: the desired \texttt{geometry_msgs::Twist} of the robot will be published here.
+	\item \textbf{``/HL/laser\_data\_obtained''}: \{\texttt{std\_msgs/Bool} data: True\} will be published, once data from one of the laser scanners have been obtained.
+	\item \textbf{``/HL/is\_kidnapped''}: every time a marker is seen by the robot when it is kidnapped, \{\texttt{std\_msgs/Bool} data: False\} will be published.
+	\item \textbf{``/vision/unexpected\_marker''}: once the robot has finished recovering itself, \{\texttt{std\_msgs/Bool} data: False\} will be published to this topic.
+	\item \textbf{``/initialpose''}: this topic is currently not in use, and is currently commented out in the implementation due to lack of time to test the method. This can however be used to reset the pose of the robot to a desired local pose. It is mainly used because the pose obtained from \texttt{/poseupdate} is not reliable enough, in the case that some sensors are turned off or are malfunctioning. This can therefore be used to set the correct local pose obtained by inverse transforming the global fused pose from the Kalman group to the local pose.
+	\item \textbf{``/tf''}: after the recovery procedure has been successfully performed, the transformation matrix that is used to transform local poses to the global map will be calculated and published to this topic.
+	\end{itemize}
+\end{description}
+
+\section{Implementation}\label{implementation}
+
+\subsection{Kidnap Detection}\label{subsection:implementation_detection}
+Three criteria were taken into account to detect the kidnap situation: timestamp of odometry, unexpected marker and big covariance.
+
+\begin{itemize}
+\item The robot regularly compares the current time of odometry data with the timestamp of last message it received from the topic \texttt{/robot/lauron/odom}. The difference between these two timestamps is compared to a certain threshold. Exceeding the threshold means, that the robot has not received data from odometry for a while and is interpreted as kidnapping. The covariance information from the topic \texttt{/kalman/fused\_pose} shall represent that situation in its values since kidnap situation happens with high covariance of the pose. The current variances in x and y directions are then used for setting the threshold stored for the third criterion.
+The variance of Yaw is not considered because these data from MCA have large fluctuation and are not reliable for the observation. This is also the reason why the covariance matrix from Kalman Filter on receiving the unexpected marker is saved rather than the timestamps.
+\item The robot subscribes to the topic \texttt{/vision/unexpected\_marker}. If an unexpected marker is received, it indicates a kidnapping situation (since there is a known map of markers in the global map). Unexpected markers only occur in a situation that the assumed pose by the robot is different from the real pose. If so happens, the covariance information from the topic \texttt{/kalman/fused\_pose} is again stored as the threshold for the third criterion.
+\item The robot constantly receives covariance information from the topic
+\\
+\texttt{/kalman/fused\_pose}. If it suddenly contains values that exceed the saved threshold, it is considered as a kidnapping too.
+\end{itemize}
+
+The detection is done at the arrival of some new information. Otherwise, when no new data arrives, the kidnap detection is executed every 2 seconds.
+ 
+In the beginning, we searched for some detection methods in the literature and publications, then finally decided to use the ``strong change of covariance'' as our kidnap detection criterion, which can be represented in a second-order derivative. However, we could only obtain little data from Kalman Filter about a kidnap situation, so it was difficult to define how strong is ``strong'' when working with real data. Therefore, we directly used the covariance matrix. There are still some other methods to achieve the detection such as using the Map-Matching confidence rate or with help of a particle filter.
+
+\subsection{Kidnap Recovery}
+%start qing
+\subsubsection{Basic Movements}
+There are total four basic movements(functions) that are used in the whole recovery algorithm, namely stopUntilStopped, goForward, goSlower, rotate.
+
+\begin{description}
+\item[stopUntilStopped()] \label{stopUntilStopped}
+The function stops the robot. It is realized by publishing linear and angular twist of the robot as zero. Because a simple publishing would result in the code to continue its execution, the function waits until the robot really stops. The threshold is set so that a negligibly small value of twist is recognized as zero.
+
+\item[goForward()] \label{goForward}
+The function moves the robot forward with the given \texttt{DEFAULT\_FORWARD\_VELOCITY}.
+
+\item[goSlower()] \label{goSlower}
+The function simply makes the robot go forward with the given velocity \\ \texttt{SLOW\_FORWARD\_VELOCITY}
+
+\item[rotate(Degree angleInDegree)] \label{rotate}
+The function makes robot rotate with a given grad in degree.
+\end{description}
+%end qing
+
+\subsubsection{Exploration Preparation}
+%start qing
+Before the robot can do the exploration in oder to relocalise, it should firstly do some preparation. The algorithm is implemented as a function \texttt{startRecovery()} and its flow is presented in Figure \ref{start_recovery}. The process before moveForward is the exploration preparationpreparation part.
+%end qing
 
 \begin{figure}[htb]
 \centering
-\includegraphics[width=0.7\textwidth]{graphics/start_recovery.png}
+\includegraphics[scale=0.8]{graphics/start_recovery.png}
 \caption{Recovery algorithm}
 \label{start_recovery}
 \centering
 \end{figure}
 
 \begin{description}
-\item[initTempVariables()] This function resets some of the attributes that couldn't be reset otherwise. This function ensures that the startRecovery() function can be executed without any unexpected side effects.
+\item[initTempVariables()] 
 
-\item[stopUntilStopped()] The function stops the robot. It is realized by publishing linear and angular twist of the robot as zero. Because a simple publishing would result in the code to continue its execution, the function waits until the robot really stops. The threshold is set so that a negligibly small value of twist is recognized as zero.
+This function resets some of the attributes that couldn't be reset otherwise. This function ensures that the startRecovery() function can be executed without any unexpected side effects.
+
+\item[stopUntilStopped()] 
+
+The function stops the robot. It is realized by publishing linear and angular twist of the robot as zero. Because a simple publishing would result in the code to continue its execution, the function waits until the robot really stops. The threshold is set so that a negligibly small value of twist is recognized as zero.
 
 \begin{figure}[htb]
 \centering
@@ -136,11 +158,13 @@ The algorithm is implemented as a function \texttt{startRecovery()} and its flow
 \centering
 \end{figure}
 
-\item[lookAround()] This function causes the robot to make a full 360$^{\circ}$ rotation to observe the environment. The distance information (in meter) between the front laser scanner and the nearest obstacle located in front of it (Figure \ref{best}, along with the current rotated angle are sampled and stored into a distance map every couple of seconds. The robot will stop after it has completed the full rotation.
+\item[lookAround()] 
+
+This function causes the robot to make a full 360$^{\circ}$ rotation to observe the environment. The distance information (in meter) between the front laser scanner and the nearest obstacle located in front of it (Figure \ref{best}, along with the current rotated angle are sampled and stored into a distance map every couple of seconds. The robot will stop after it has completed the full rotation.
 
 \item[findBestAngle()] This function searches the distance map, that was initialized during lookAround(), and returns the angle in which the distance to the front laser scanner was the shortest. 
 
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[scale=0.6]{graphics/Zone.png}
 \caption{Defining of various speeds depending on the distance to the obstacle}
@@ -152,7 +176,7 @@ The algorithm is implemented as a function \texttt{startRecovery()} and its flow
  until it finds itself in the area where it has to slow down, and finally in the distance to the obstacle where it has to stop. The ``speed'' areas are shown in Figure \ref{Zone}, and the thresholds are respectively \texttt{MIN\_FRONT\_DISTANCE} and \texttt{MIN\_CAUTION\_DISTANCE}. 
 %Finding the best angle means simply calculating the minimum distance among sampled scans and returning its angle, as shown in Figure \ref{best}, now in millimeters. Due to laser properties negligibly small distances are not considered.
  
-\begin{figure}[h]
+\begin{figure}[ht]
 \centering
 \includegraphics[scale=0.6]{graphics/front_parallel.png}
 \caption{Rotating to align front parallel to the obstacle}
@@ -161,24 +185,26 @@ The algorithm is implemented as a function \texttt{startRecovery()} and its flow
 \end{figure} 
  
 \item[rotateFrontParallel()] The function rotates the robot until it is aligned parallel to the obstacle with its front, as shown in Figure \ref{parallel}. Merged information from both front and back lasers are used. Two points that are spot in front interval of the robot and have the smallest distance are considered a pair from which an average is calculated. That average is treated as a pivot point of the robot rotation. Points which are detected around the pivot are grouped into either left or right side and averaged again. The resulting final left and right average points form a vector to which the robot has to align itself. The averaging adds robustness to the process and tackles the problem of longitudinal inaccuracy of laser scans.
+\end{description}
 
-\item[goForward()] The function moves the robot forward with the given \texttt{DEFAULT\_FORWARD\_VELOCITY}.
-
+\subsubsection{Exploration}
+%start qing
+After the exploration preparation, the robot can along the wall of its left side to explore the room and find marker. During the exploration, it should concern auf two attributes, namely \texttt{isKidnapped} and \texttt{seesMarker}.
+%end qing
+\begin{description}
 \item[isKidnapped] Indicates whether the robot is currently being kidnapped or not. This attribute is updated through subscription to the ROS topic \texttt{/HL/is\_kidnapped}.
 
 \item[seesMarker] Indicates whether the QR marker was seen by the Kinect camera. This attribute is updated through subscription to the ROS topic \texttt{/vision/sees\_marker}. This attribute is always reset to false each time startRecovery() is executed.
+\end{description}
 
+The main part of the exploration consists of several functions as following. The robot first does \texttt{moveForward()} und at the same time looks for marker. When it finds the marker, the attribute \texttt{seesMarker} is set as true and the transformation between frames \texttt{/local\_map} and \texttt{/global\_map} is updated.
+\begin{description}
 \item[moveForward()] This function is the core of the recovery algorithm. More about this function will be discussed later.
 
 \item[doFoundMarker()] The function reacts in a situation where a QR marker was seen. It stops for 0.5 seconds and publishes that the robot is not kidnapped anymore.
 
 \item[publishFalseUnexpectedMarker()] The function communicates with the vision module by publishing to the topic \texttt{/vision/unexpected\_marker} that an unexpected marker was seen.
 \end{description}
-
-
-
-
-
 
 
 As mentioned before the core of the recovery algorithm is the function \texttt{moveForward()}. Its logic is depicted in Figure \ref{move_forward} and its single steps in the following description:
@@ -204,9 +230,9 @@ As mentioned before the core of the recovery algorithm is the function \texttt{m
 
 The function \texttt{checkObstacleLeftFrontBlindSpot()} checks points in that interval and if there is any obstacle closer than chosen \texttt{FREE\_LEFT\_SPACE\_DISTANCE} it makes the robot rotate 4$^{\circ}$ clockwise, otherwise 8$^{\circ}$ counterclockwise. This solution prevents a situation in which the robot moves on without noticing an obstacle in its blind spot. Different angle values take care of non-ambiguous classification of points located there to one of the other intervals, front or left.
 
-\item[robotIsStopped] The flag indicates if the robot has stopped or not. That depends on the values of linear twist compared to zero in function \texttt{isStopped()}
+\item[robotIsStopped] The attribute indicates if the robot has stopped or not. That depends on the values of linear twist compared to zero in function \texttt{isStopped()}
 
-\item[robotShouldStop] The flag indicates if the robot should stop. This is the case if its current distance to the closest obstacle is not bigger than \texttt{MIN\_CAUTION\_DISTANCE}, which is chosen to be 0.11 meter.
+\item[robotShouldStop] The attribute indicates if the robot should stop. This is the case if its current distance to the closest obstacle is not bigger than \texttt{MIN\_CAUTION\_DISTANCE}, which is chosen to be 0.11 meter.
 
 
 
@@ -233,7 +259,7 @@ The function \texttt{checkObstacleLeftFrontBlindSpot()} checks points in that in
 \label{fig:side_by_side}
 \end{figure}
 
-\item[robotShouldGoSlower()]  The flag indicates if the robot should stop. It is so if its current distance to the closest obstacle is not bigger than \texttt{MIN\_FRONT\_DISTANCE}, chosen to be 0.3 meter.
+\item[robotShouldGoSlower()]  The attribute indicates if the robot should stop. It is so if its current distance to the closest obstacle is not bigger than \texttt{MIN\_FRONT\_DISTANCE}, chosen to be 0.3 meter.
 
 \item[goSlower()] The function simply makes the robot go forward with the given velocity \\ \texttt{SLOW\_FORWARD\_VELOCITY}
 
@@ -248,6 +274,9 @@ The function \texttt{checkObstacleLeftFrontBlindSpot()} checks points in that in
 \end{figure}
 
 Due to the fact that the maze-solving-algorithm consists of moving on the left side and rotating clockwise, the front of the robot is a bit asymmetric as shown in Figure \ref{betrachteter_bereich}. There is a bit more space on the right to make sure that the robot is able to rotate any time it needs.
+
+
+
 
 \section{Problems and Difficulties} \label{problems}
 During our work we encountered various difficulties of the workplace and its environment and we list them in the following subsections.
