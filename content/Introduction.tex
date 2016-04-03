@@ -64,7 +64,7 @@ The Kinect is a 3D camera sensor developed by Microsoft for the Xbox video game 
 
 \begin{figure}[ht]
 \centering
-\includegraphics[width=0.5\textwidth]{graphics/kinect.png}
+\includegraphics[scale=0.425]{graphics/kinect.png}
 \caption{main components of a Kinect system}
 \label{Kinect}
 \centering
@@ -77,7 +77,15 @@ In this work we primarily rely on the Kinect's object tracking abilities.
 \section{Laser Scanner}
 3D laser scanners use narrow laser-beams to scan their environment and allow almost continuous mapping - regardless of whether objects are moving or not. They produce point clouds which represent the direction and distance of objects in the environment. \textit{Sick LMS100} (shown in Figure \ref{Laser}) is used in the HoLLiE assistance robot\footnote{http://www.fzi.de/en/research/projekt-details/hollie/}. It has a scanning angle of  270$^\circ$, a range of 18m and features a detection capabilities for arbitrary object forms\footnote{https://www.sick.com/de/de/mess-und-detektionsloesungen/2d-laserscanner/lms1xx/lms100-10000/p/p109841}.
 
-In ROS the laser scanner output is published as \texttt{\_masgs/LaserScan} message. Among others it contains following information:
+\begin{figure}[thb]
+      \centering
+      \includegraphics[scale=0.8]{graphics/Laserscanner.png}
+      %\includegraphics[scale=1.0]{figurefile}
+      \caption{Sick LMS100}
+      \label{Laser}
+\end{figure}
+
+In ROS, the laser scanner output is published as \texttt{\_msgs/LaserScan} message, which contains the following information:
 \begin{itemize}
 \item start angle
 \item end angle
@@ -86,16 +94,20 @@ In ROS the laser scanner output is published as \texttt{\_masgs/LaserScan} messa
 \item minimum and maximum range
 \end{itemize}
 
-For localization purposes the most important information are the angles of each hit and the objects' distance from the scanner.
+As shown in the following graph \ref{sensor}, the start angle of the laser scanner is marked as "min", which has a deviation of -135$^{\circ}$ from the laser scanner's x-axis. On the other hand, the end angle of the laser scanner is marked as "max" in the graph, and has a deviation of 135$^{\circ}$ from the laser scanner's x-axis. For localization purposes the most important information are the angles of each hit and its distance from the laser scanner. This information is acquired by sampling every 0.5$^{\circ}$ between the start and the end angle. The distance data are stored in an array and are sorted ascendingly based on the angles at which they were sampled.
 
-\begin{figure}[thpb]
+\begin{figure}[htb]
       \centering
-      \includegraphics[width=0.5\textwidth]{graphics/Laserscanner.png}
-      %\includegraphics[scale=1.0]{figurefile}
-      \caption{Sick LMS100}
-      \label{Laser}
-   \end{figure}
+      \includegraphics[width=0.7\textwidth]{graphics/sensoren.png}
+      \caption{Observing of the environment}
+      \label{sensor}
+      \centering
+\end{figure}
+
+
+
 \section{ASAP (Advanced Shared Autonomy Platform)}
+As shown in Figure \ref{sensor} the front left sensor covers mostly left and front of the robot and can detect the red dots, while the back right sensor covers mainly the right and back of the robot and can detect the blue dots. The regions of overlap can be detected by both sensors. 
 The ASAP (shown in figure \ref{ASAP}), short for Advanced Shared Autonomy Platform, is a mobile robotic platform based on two Segway RMP-50 Omni platforms featuring two omnidirectional plastic rollers each (\textit{Mecanum wheels}), so that the platform can move freely in all directions, see figure \ref{Omni}.
 
 In addition, this ASAP equipped with two Sick LMS100 laser scanners, a kinect and an on-board computer with a Linux system for control and monitoring. The embedded computer features 4GB RAM, a 64GB SSD, a core i7 M620 CPU and is accessible through wifi. 
