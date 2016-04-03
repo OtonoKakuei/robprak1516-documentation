@@ -81,7 +81,7 @@ The followings are the topics that were used and published by \texttt{kidnap\_re
 \begin{description}	
 \item[List of published topics]\
 	\begin{itemize}
-	\item \textbf{``/robot/lauron/cmd\_vel''}: the desired \texttt{geometry_msgs::Twist} of the robot will be published here.
+	\item \textbf{``/robot/lauron/cmd\_vel''}: the desired \texttt{geometry\_msgs::Twist} of the robot will be published here.
 	\item \textbf{``/HL/laser\_data\_obtained''}: \{\texttt{std\_msgs/Bool} data: True\} will be published, once data from one of the laser scanners have been obtained.
 	\item \textbf{``/HL/is\_kidnapped''}: every time a marker is seen by the robot when it is kidnapped, \{\texttt{std\_msgs/Bool} data: False\} will be published.
 	\item \textbf{``/vision/unexpected\_marker''}: once the robot has finished recovering itself, \{\texttt{std\_msgs/Bool} data: False\} will be published to this topic.
