@@ -231,9 +231,6 @@ By that time data publishing and necessary software for it have already been fac
 \subsection{Roslaunch initialization and ROS\_IP behind NATs}
 While working with virtual machines for ROS package development the problem of incorrect communication between the packages was discovered. Only when starting the nodes in the right order with appropriate delays in between, the system would work on the robot. In general the specification of the \texttt{ROS\_IP} environment variable is used to solve that issue. The local IP of the virtual machines behind a NAT was not available and so the execution of the nodes was completely moved to the robot.
 
-\subsection{Wifi Overload $\Rightarrow$ huge delays}
-When attaching the camera to the robot in a manner that the image data has to be sent over wifi, the whole ROS communication is extremly slow. This problem is solved by installing all drivers for the camera on the robot. So the camera and its related nodes can operate locally on the robot.
-
 \subsection{Boundary for accepted jumps between sensor outputs}
 When first configuring the \texttt{robot\_localization} package, a threshold for tolerated jumps in the sensor data was set to a rather low value. This caused the Kalman Filter to exhibit a lot of unexpected behavior, for instance it did not respect changes in one sensor at all. After setting the threshold to an appropriate value, the filter worked even better as initially expected. This is partly due to the well adjusted remaining parameters of the Kalman Filter which were already thoroughly tested with the Matlab simulation.
 
