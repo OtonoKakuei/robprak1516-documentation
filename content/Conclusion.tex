@@ -1,28 +1,41 @@
 \chapter{Evaluation}
 \section{Integration}
-Due to the consequent usage of the IDSGit the development process can be reviewed in the gitorious commit path. The pure code combiniation of the groups' development branches was quite simple and required only the installation of the dependencies of the groups. After everything compiled fine the real integration work started. All subscribed and published topics had to be updated to match the requirements that had been discussed in advance. The main source of missing specification have been the frames each group publishes their data in.
+Due to the consequent usage of IDSGit as version control tool, the development process can be reviewed in the git commit history. Merging the groups' development branches was quite simple and required only minor fixes, primarily to correct hard-coded file paths or to add missing files to the repository. Additionally, of course each group's dependencies needed to be installed.
 
-Also some topic names had to be updated since every group used their own topic namespace.
-The main integration work done till the end of the project has been to deliver the data the other groups actually expect to make the software function as expected.
+After all modules compiled together successfully, the actual integration work started. The main integration work consisted in correctly delivering and receiving data between the groups, to make the modules act together as expected. For instance all subscribed and published topics required adjustments to match the requirements discussed in advance. Aside from that some topic names had to be updated since every group used their own topic namespace. The main part of missing specification turned out to be the frames each group publishes their data in.
 
-\section{Test Scenario}
-To evaluate the implementation three scenarios with increasing difficulty levels were deviced and tested:
-\begin{enumerate}
-\item Localization with laser scanners is disabled and the robot is moved while its camera is in contact with a marker.
+One unanticipated problem arose when deploying the camera on the robot: Testing the camera related code with the Kinect attached to the robot caused high wifi latency. Since all nodes still operated on development machines, image data from the camera kept being sent uncompressed over the network and massively slowed down all work. So help from authorized users was needed to install drivers for the camera on the robot. From then on the Vision nodes operated directly on the robot.
 
-No actual kidnapping takes place, this only ensures that the robot moves its head correctly to stay in contact with the marker.
+\section{Test Scenarios}
+The implementation was tested in three scenarios with increasing difficulty levels. Evaluation of the robot's behavior was done by comparing expected reactions with actual behavior, by visualizing sensor outputs in rviz and by reading out the ``is\_kidnapped'' topic. The scenario rules and results are presented in the following.
 
-\item Both laser scanners and camera tracking are disabled before kidnapping the robot. At the new location the camera is in immediate contact with a marker. 
+\begin{description}
+\item[1. Marker tracking] Localization with laser scanners is disabled and the robot is moved while its camera is in contact with a marker. No actual kidnapping takes place, this only ensures that the robot moves its head correctly to stay in contact with the marker.
 
-Recovery from kidnapped state took place immediately.
-\item Finally the robot is kidnapped like in scenario 2 but is not provided with a marker. 
+The scenario was handled correctly by the robot. First it scanned the entire room rotating the camera by a full 360$^\circ$. After that the camera was focused on the found marker. We noticed small jerks to the left and right though, which probably is a result of too big single rotation steps that keeps causing the robot to believe that it needs to make a small correcting rotation back to the other direction.
 
-In this case the robot first moves its head to search for a marker and if it finds none, moves left along the closest obstacle while continuously searching for markers.
-\end{enumerate}
+\item[2. Trivial kidnapping] Both laser scanners and camera tracking are disabled before kidnapping the robot. At the new location the camera is in immediate contact with a marker. This was done by turning off laser scanners and odometry, covering the camera with a cloth and placing the robot in front of a marker.
+
+Recovery from kidnapped state took place immediately after lifting the cloth. The marker was focused just like in scenario 1 and the rviz visualization showed the correct position.
+
+\item[3. Real Kidnapping] Finally the robot is kidnapped like in scenario 2 but is not provided with a marker. For this we again placed a cloth on the camera and kept it there longer and hiding surrounding markers in doing so. That way exploration was prolonged and could be tested more extensively. 
+
+The robot first turned around on the spot to scan its surroundings while rotating the camera. After it found the closest obstacle (a wall), it positioned itself left from it and kept moving in one direction according to the maze-solving-algorithm. Simultaneously, it kept rotating the camera to search for markers. The wall ended in a pillar where the cloth was lifted to reveal the camera. The robot performed a successful u-turn and found the marker on the other side of the wall.
+
+This test scenario revealed the difficulties of navigation on uneven paths. The location around the pillar was very uneven so that the robot needed several attempts in which it also temporarily moved backwards to turn there.
+\end{description}
 
 \chapter{Conclusion}
 \section{Summary and Conclusion}
-\section{Outlook}
-In the future the next obvious step is to explore the possibility and requirements for camera tracking of natural markers instead of AR tags. Although AR tags are easy to use and quickly setup, they cannot be attached to arbitrary surfaces, either because of practical or simply because of optical reasons.
+The kidnapped robot problem can be solved effectively with a robot featuring a Kinect, laser sensors and odometry data.
 
-It is also necessary to find a way to smoothly integrate kidnapping recovery as a background service. At the moment the camera keeps tracking markers as soon as they are in range, thus rendering it useless for the robot's main task.
+In this project marker tracking and camera-derived position estimates were generated. A database for markers was built and logic for determining the next expected marker was implemented. Various sensor outputs were merged and filtered by an extended Kalman Filter, the filter behavior was adjusted to be able to cope with varying data quality and different numbers of sensor sources. Conversions between various frames were established. Decision making based on available position data was implemented. A maze-solving-algorithm was employed for map exploration. Contradicting information from sensors as well as high covariances in position estimates were used to determine kidnapping situations. Rviz was heavily used to debug and monitor the software.
+
+Separating the problem into data acquisition task, data processing task and logic task, then solving it in three autonomous groups is easy and saves time. Occasional meetings are enough to discuss the strategy and to define communication interfaces. This approach requires the generation of dummy test data to serve as placeholders for other groups' outputs. It saves tremendous time to document all learned rules and usages for institute specific tools (be it hardware or software) in a shared wiki so that all teams can benefit from it.
+
+\section{Outlook}
+In the future the next obvious step is to explore the possibility and requirements for camera tracking of natural markers instead of AR tags. Although AR tags are easy to use and quickly setup, they cannot be attached to arbitrary surfaces, either because of practical or simply because of optical reasons. Related to this, a marker database for the entire FZI might be very interesting for more elaborate tests and use cases.
+
+Additional sensors can be added to further improve localization accuracy and allowing the robot to recover from more complex kidnapping scenarios.
+
+In the long run it will be necessary to smoothly integrate kidnapping recovery as a background service on robots. At the moment the camera keeps tracking markers as soon as they are in range, thus rendering it useless for the robot's main task.
