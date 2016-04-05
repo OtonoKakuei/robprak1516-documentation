@@ -7,7 +7,11 @@ Imagine you are sitting in your office, dozing off, ready to sleep. As soon as y
 
 In this work we tackle the kidnapping problem on robots. The first step is to detect whether a kidnapping situation occurred and the second step is to relocalize the robot. Missing information from sensors as well as discrepancies between the perceived and expected environment are hints of a kidnapping. Recovery can be done by gathering information while exploring the surroundings. If any known features are found, they will be matched with the robot's database. Successful matching means that the robot can use the results to estimate its position in the environment. Otherwise, the exploration continues.
 
+\section{Document overview}
+This document is separated into 7 chapters. After the introduction, comprehensive fundamentals relevant to the problem are provided in chapter \textit{Fundamentals} (\ref{Fundamentals chapter}). Chapters \textit{Vision} (\ref{Vision chapter}), \textit{Data fusion} (\ref{Kalman chapter}) and \textit{High Level} (\ref{High Level chapter}) give an in-depth description of the three modules that together solve the kidnapped robot problem. They also include experiences and problems encountered during the project. Chapter \textit{Evaluation} (\ref{Evaluation chapter}) contains an analysis of the module integration process followed by test kidnapping scenarios and results for the developed software. Finally, a summary of this project along with ideas for future work are provided in section \textit{Conclusion} (\ref{Conclusion chapter}).
+
 \chapter{Fundamentals}
+\label{Fundamentals chapter}
 \section{ROS -- the Robot Operating System}
 ROS is an open-source framework for robot software that was initially developed at Willow Garage in Palo Alto after ideas for it originated in the \textsc{Stair} and Personal Robotics research projects at Stanford University in 2007. 
 
