@@ -68,7 +68,7 @@ This node is part of the ROS \texttt{robot\_localization} package and implements
 
 It listens on the `laserProcessed'' topic to which the converter publishes laser data that is converted from local\_map to global frame. This is fused with the robot's odometry data from \\ ``/robot/lauron/odom'' topic and ``/vision/estimated\_pose'' to which the vision module publishes poses derived from camera images.
 
-It is also subscripted to ``reset\_sensor''. Here a new position with very low covariances is optionally published to convince the filter to trust the pose obtained on kidnap recovery. Although this can be used to correctly reset the filter, another approach is currently active, see TODO.
+It is also subscripted to ``reset\_sensor''. Here a new position with very low covariances is optionally published to convince the filter to trust the pose obtained on kidnap recovery. Although this can be used to correctly reset the filter, another approach is currently active, section \ref{Kidnap recovery section}.
 
 Finally, the fused pose is published to \textbf{``odometry/filtered''} in local\_map.
 
