@@ -14,7 +14,7 @@ The structure of the whole system is shown in Figure \ref{System}. Section \ref{
 \end{figure}
 
 \section{Concept} \label{section:concept}
-%start qing
+
 \subsection{Kidnap Detection} \label{subsection:concept_detection}
 There are several ways to detect a kidnapping situation. We could, for example, say that when one of our sensors are rendered unavailable, then there is a high chance that we are kidnapped at that point. We probably have to first determine which sensors are crucial for the localization. If there are redundant sensors in the system (i.e. there are 2 or more sensors that deliver similar data) then it would probably be fine if only one of them is available for the localization. We could also use some sort of passive landmarks to determine or check our current pose. The positions of the landmarks can be stored in the robot's database, so that the robot can do a lookup whenever it sees those landmarks. Another way to do the detection is to match the obtained obstacle point clouds with a map of the building that we have prepared beforehand. A low match rate could mean that we are not there, where we think we are. The list goes on, and will not be further discussed in this chapter.
 
@@ -27,20 +27,6 @@ After being kidnapped, the robot should try to find out where it is currently lo
 In order to obtain new information after being kidnapped, our group proposes to use a maze-solving algorithm. The main idea of the algorithm is to explore the environment by going in one direction, e.g. forward, while always making sure that the obstacle is located nearby to one side of the robot. During the exploration, new data, such as: point clouds; landmarks; etc., can be obtained. These are then used to determine the robot's current pose. Detailed explanation regarding the implementation will be given in Subsection \ref{subsection:implementation_recovery}.
 
 
-%end qing
-%Basic functions FIXME
-%\begin{figure}[htb]
-%\centering
-%\includegraphics[width=0.7\textwidth]{graphics/sensoren.png}
-%\caption{Observing of the environment}
-%\label{sensor}
-%\centering
-%\end{figure}
-%
-%As shown in Figure \ref{sensor} the front left sensor covers mostly left and front of the robot and can detect the red dots, while the back right sensor covers mainly the right and back of the robot and can detect the blue dots. The regions of overlap can be detected by both sensors. 
-
-%rotate()
-%and so on
 
 
 
@@ -124,7 +110,7 @@ The 3 detection criteria are performed inside ROS callbacks. This means that eac
 
 We read a lot of papers and publications about the problem and did a lot of brainstorming before we came to our solution. We thought that a ``big change'' in covariances, which could be obtained by calculating the second order derivation of the covariances, should be used to detect the kidnapping, instead of using the variances as they are. However, it is not clear how big of a difference in values is ``big'' in our situation.
 
-%start qing
+
 \subsection{Kidnap Recovery} \label{subsection:implementation_recovery}
 
 Whenever the Recoverer detects that its status has changed from being localized to being kidnapped, it will execute the kidnap recovery algorithm. As previously mentioned in Subsection \ref{subsection:concept_recovery}, the recovery algorithm is implemented based on maze-solving algorithms. The obstacles have to be located on the left of the robot in our implementation. We decided on this, because the front laser scanner is also located on the left side of the robot, which makes detecting obstacles while moving forward much easier.
@@ -301,7 +287,7 @@ This function ensures that the robot maintains a proper distance to the left obs
 
 \item \textbf{adjust()} \hfill \\
 This function adjusts the robot's pose in respect to the left obstacle by doing \texttt{rotateLeftParallel()} (see \ref{item:rotateLeftParallel}) and \\ \texttt{adjustLeftDistance()} (see \ref{item:adjustLeftDistance}).
-%end qing
+
 \begin{figure}[ht]
 \centering
 \begin{subfigure}{.5\textwidth}
@@ -331,9 +317,9 @@ During the course of the practical course, we encountered several difficulties d
 
 \subsection{Testing on Simulator}
 
-There was a time when we thought that we wanted to test our recovery algorithm on the MCA simulator, because the robot was not available at the time. Setting up the simulator was not so simple and took a lot of time due to the lack of documentation. We had to get help from Marc to successfully set the simulator up, which still took quite some time to find the correct commit. However, the problem did not stop there. The ROS-MCA interface has not been fully implemented yet at the time, so we thought we would use this time to get to know MCA2 better and to prepare our code for the simulator. After the ROS-MCA interface has been implemented, we adjusted our code to make it functional. We tried testing it out afterwards, but sadly it still did not work. The problem was because the laser scanners keep giving us data, as if the obstacles are not there. So we had to wait for the solution while finding out what the problem was in the meantime by ourselves. We had to modify the config file (angle of x-axis, min angle, max angle, position) for the laser scanners on the simulator as well, because it did not represent the laser scanners on pfosten. Finding which config file we need to change was also a challenge, because of the lack of documentation. 
+There was a time when we thought that we wanted to test our recovery algorithm on the MCA simulator, because the robot was not available at the time. Setting up the simulator was not so simple and took a lot of time due to the lack of documentation. We had to get help from Marc to successfully set the simulator up, which still took quite some time to find the correct commit. However, the problem did not stop there. The ROS-MCA interface has not been fully implemented yet at the time, so we thought we would use this time to get to know MCA2 better and to prepare our code for the simulator. After the ROS-MCA interface has been implemented, we adjusted our code to make it functional. We tried testing it out afterwards, but sadly it still did not work. The problem was because the laser scanners keep giving us data, as if the obstacles are not there. So we had to wait for the solution while finding out what the problem was in the meantime by ourselves. We had to modify the configuration file (angle of x-axis, min angle, max angle, position) for the laser scanners on the simulator as well, because it did not represent the laser scanners on pfosten. Finding which configuration file we need to change was also a challenge, because of the lack of documentation. 
 
-At some point, we managed to get the MCA2 to work perfectly. However, we still see some strange things happening on the simulator. Again, we took a lot of time to solve this issue. We thought that the problem lied on our code, but it turns out that the twists that we published are somehow interpreted as global twists for the robot. Meaning that no matter how the robot is oriented in the global map, when the linear x velocity for the robot is set, then the robot will move along the x-axis of the global map. We had to fix this as well, and finding the correct mca file, we need to change, also took quite some time.
+At some point, we managed to get the MCA2 to work perfectly. However, we still see some strange things happening on the simulator. Again, we took a lot of time to solve this issue. We thought that the problem lied on our code, but it turns out that the twists that we published are somehow interpreted as global twists for the robot. Meaning that no matter how the robot is oriented in the global map, when the linear x velocity for the robot is set, then the robot will move along the x-axis of the global map. We had to fix this as well, and finding the correct mca file, we needed to change, also took quite some time.
 
 At the end, our recovery algorithm works more or less on the simulator, which was caused by the error model that was implemented in the MCA2 module. There are some improvements to be made, but it could be seen that it was going on the right track. Then comes the testing with the real robot. The algorithm performed on the robot did not even come close to the achieving the same results we obtained from the simulation. We had to change a lot of things in order for it to work on the robot.
 
@@ -344,11 +330,11 @@ Long story short, we wasted a lot of time on the simulator.
 
 Even after we have changed and improved our implementation, some of our functions still could not work properly. We only noticed it after comparing the raw laser scanner data obtained from the two laser scanners, and found out that the data did not really match one another. Later we found out that we could have achieved the same result by using rviz.
 
-The two laser scanners of the robot turned out to not have been calibrated properly. Due to the lack of documentation, it was especially hard to find the correct configuration files for the laser scanners. We spent a big amount of time searching for the correct config file by changing the parameter values and observing the results in rviz. After finding the correct files, we now have to accurately measure the positions of the laser scanners and adjust it accordingly in the configuration files. We were told specifically not to modify the laser scanners physically. So we had to measure angle differences manually.
+The two laser scanners of the robot turned out to not have been calibrated properly. Due to the lack of documentation, it was especially hard to find the correct configuration files for the laser scanners. We spent a big amount of time searching for the correct configuration file by changing the parameter values and observing the results in rviz. After finding the correct files, we now have to accurately measure the positions of the laser scanners and adjust it accordingly in the configuration files. We were told specifically not to modify the laser scanners physically. So we had to measure angle differences manually.
 
-Measuring the angle differences manually was a really meticulous task. We had to first find out what points are considered the minimum and maximum range of the laser scanner. Then we had to align large straight objects to the robot, and calculate the angle difference between the object and the extreme points. Afterwards, these values are written into the config files and are tested on rviz. We wanted high precision on the data, so we tried to make both point clouds to completely overlap with one another. This however turned out to be impossible, so we had to determine which regions should overlap the most. We tried testing our algorithm afterwards, and it worked.
+Measuring the angle differences manually was a really meticulous task. We had to first find out what points are considered the minimum and maximum range of the laser scanner. Then we had to align large straight objects to the robot, and calculate the angle difference between the object and the extreme points. Afterwards, these values are written into the configuration files and are tested on rviz. We wanted high precision on the data, so we tried to make both point clouds to completely overlap with one another. This however turned out to be impossible, so we had to determine which regions should overlap the most. We tried testing our algorithm afterwards, and it worked.
 
-Some time afterwards, we tried testing our algorithm again, and it did not work. Turned out that the lasers have to be re-calibrated. So we decided not to do the same calibration method that we did before, due to the long time it consumed. We found out that both laser scanners actually have the same min and max angle (from the center of the laser scanner), and that both encompass the same area. So we decided to tweak the config data again to emulate this behaviour. Afterwards, we physically rotated the laser scanners in order for them to cover the areas they were supposed to cover. After we have confirmed that they are now correctly calibrated, we marked the laser scanners with a pencil, so that the next time we need to calibrate them again, we would be able to do so more easily with the help of a T square ruler. 
+Some time afterwards, we tried testing our algorithm again, and it did not work. Turned out that the lasers have to be re-calibrated. So we decided not to do the same calibration method that we did before, due to the long time it consumed. We found out that both laser scanners actually have the same min and max angle (from the center of the laser scanner), and that both encompass the same area. So we decided to tweak the configuration data again to emulate this behaviour. Afterwards, we physically rotated the laser scanners in order for them to cover the areas they were supposed to cover. After we have confirmed that they are now correctly calibrated, we marked the laser scanners with a pencil, so that the next time we need to calibrate them again, we would be able to do so more easily with the help of a T square ruler. 
 
 \subsection{WLAN}
 
