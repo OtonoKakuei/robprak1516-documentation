@@ -8,87 +8,87 @@ After all modules compiled together successfully, the actual integration work st
 One unanticipated problem arose when deploying the camera on the robot: Testing the camera related code with the Kinect attached to the robot caused high wifi latency. Since all nodes still operated on development machines, image data from the camera kept being sent uncompressed over the network and massively slowed down all work. So help from authorized users was needed to install drivers for the camera on the robot. From then on the Vision nodes operated directly on the robot.
 
 \section{Test Scenarios}
-The implementation was tested in three scenarios with increasing difficulty levels. Evaluation of the robot's behavior was done by comparing expected reactions with actual behavior, by visualizing sensor outputs in rviz and by reading out the ``is\_kidnapped'' topic. The scenario rules and results are presented in the following.
+The implementation was tested in three scenarios with increasing difficulty levels. Evaluation of the robot's behavior was done by comparing expected reactions with actual behavior, by visualizing sensor outputs in rviz and by reading out the ``is\_kidnapped'' and ``fused\_pose'' topics. The scenario rules and results are presented in the following.
 
 \begin{description}
 \item[1. Marker tracking] Localization with laser scanners is disabled and the robot is moved while its camera is in contact with a marker. No actual kidnapping takes place, this only ensures that the robot moves its head correctly to stay in contact with the marker.
 
-The scenario was handled correctly by the robot. First it scanned the entire room rotating the camera by a full 360$^\circ$. After that the camera was focused on the found marker. We noticed small jerks to the left and right though, which probably is a result of too big single rotation steps that keeps causing the robot to believe that it needs to make a small correcting rotation back to the other direction.
-
-\item[2. Trivial kidnapping] Both laser scanners and camera tracking are disabled before kidnapping the robot. At the new location the camera is in immediate contact with a marker. This was done by turning off laser scanners and odometry, covering the camera with a cloth and placing the robot in front of a marker.
-
-Recovery from kidnapped state took place immediately after lifting the cloth. The marker was focused just like in scenario 1 and the rviz visualization showed the correct position.
-
-\item[3. Real Kidnapping] Finally the robot is kidnapped like in scenario 2 but is not provided with a marker. For this we again placed a cloth on the camera and kept it there longer and hiding surrounding markers in doing so. That way exploration was prolonged and could be tested more extensively. 
-
-The robot first turned around on the spot to scan its surroundings while rotating the camera. After it found the closest obstacle (a wall), it positioned itself left from it and kept moving in one direction according to the maze-solving-algorithm. Simultaneously, it kept rotating the camera to search for markers. The wall ended in a pillar where the cloth was lifted to reveal the camera. The robot performed a successful u-turn and found the marker on the other side of the wall.
-
-This test scenario revealed the difficulties of navigation on uneven paths. The location around the pillar was very uneven so that the robot needed several attempts in which it also temporarily moved backwards to turn there.
-\end{description}
-
-\begin{enumerate}
-\item MCA localization is disabled and the robot is moved while its camera is in contact with a marker.
-
-\textbf{Actual execution}:
+\textit{Execution:}
 \begin{itemize}
-\item Robot was started, navigated to see the marker, and is now localized.
-\item MCA localization (laser scanners and odometry) and the motor were turned off
-\item Robot is now kidnapped, because the sensors were not available for a long time.
-\item Robot was moved around manually while maintaining eye contact with the previously seen marker.
+\item Robot was started and navigated to see the marker, so that it was localized.
+\item MCA localization, namely laser scanners and odometry, as well as the motor were turned off.
+\item Robot was moved around manually.
 \end{itemize}
 
-\textbf{Result}:
+\textit{Result: The scenario was handled correctly by the robot.}
 \begin{itemize}
-\item Kalman group published correct pose of the robot.
+\item After MCA localization was turned off, the robot reported kidnapped state, because sensors were not available for a long period of time.
+\item While being moved the camera was constantly focused on the found marker.
+\item The correct pose was published by the Kalman Filter module indicating recovery from kidnapped state.
 \end{itemize}
 
+\textit{Problems:}\\
+We noticed small jerks to the left and right which probably is a result of too big single rotation steps that keeps causing the robot to believe that it needs to make a small correcting rotation back in the other direction.
 
-\item Both MCA localization and camera tracking are disabled. At a new location, the camera is re-enabled and can immediately see a marker.
+\item[2. Trivial kidnapping] Both laser scanners and camera tracking are disabled before kidnapping the robot. At the new location the camera is in immediate contact with a marker.
 
-\textbf{Actual execution}:
+\textit{Execution:}
 \begin{itemize}
-\item Robot was started, navigated to see a marker, and is now localized.
+\item Robot was started and navigated to see a marker, so that it was localized.
 \item MCA localization and the motor were turned off. 
 \item Kinect camera was blindfolded.
-\item Robot is now kidnapped, because the sensors were not available for a long time.
 \item Robot was moved around manually to a position where it should be able to see a marker.
-\item Blindfold is removed.
+\item Blindfold was removed.
 \item Robot sees the marker.
 \end{itemize} 
 
-\textbf{Result}:
+\textit{Result: The scenario was handled correctly by the robot.}
 \begin{itemize}
-\item Kalman group published correct pose of the robot.
+\item As before the robot reported a kidnapping situation, because the sensors were not available for a long time.
+\item Recovery from kidnapped state took place immediately after removing the blindfold:
+\item The marker was focused just like in scenario 1.
+\item A correct pose was published by the Kalman Filter module.
 \end{itemize}
 
-\item MCA localization and camera tracking are disabled. At a new location, MCA localization and camera tracking are re-enabled. Robot is not provided with a marker at the new location. 
+\item[3. Real Kidnapping] Finally the robot is kidnapped like in scenario 2 but is not provided with a marker.
 
-\textbf{Actual execution}:
+\textit{Execution:}
 \begin{itemize}
-\item Robot was started.
-\item Robot is now kidnapped, because it has no previous knowledge of where it is located.
-\item Robot looks around and could not find a marker. 
-\item Robot goes to the nearest obstacle and aligns itself parallely.
-\item Robot moves along the left obstacle.
-\item Robot finds a free space on the left side.
-\item Robot turns left and moves forward.
-\item Robot finds a marker.
-\end{itemize} 
-
-\textbf{Result}:
-\begin{itemize}
-\item Kalman group published correct pose of the robot.
-\item Robot is localized.
+\item Robot was started, but no possibilities for initial localization were offered.
+\item Robot was blindfolded to keep surrounding markers hidden and forcing a prolonged exploration.
+\item The robot's expected exploration path leads it along a wall that ends in a pillar.
+\item At the pillar the blindfold was planned to be lifted.
+\item Right after the pillar a marker was attached to the other side of the wall.
 \end{itemize}
 
-\end{enumerate}
+\textit{Result:}
+\begin{itemize}
+\item After being turned on, the robot immediately reported kidnapped state because no localization was possible and it did not know where it was.
+\item The robot first turned around on the spot to scan its surroundings while rotating the camera.
+\item Since it did not find any markers due to the blindfold, it determined the closest obstacle with help of the laser scanners -- a wall.
+\item The robot positioned itself left from the wall and kept moving in the expected direction according to the maze-solving-algorithm.
+\item Simultaneously, it kept rotating the camera to search for markers.
+\item At the pillar the blindfold was removed.
+\item The robot performed a successful u-turn at the pillar: It noticed free space on the left, so turned left and moved forward, again noticed free space on the left, turned and moved forward.
+\item It found the marker on the other side of the wall and focused on it.
+\item The Kalman module published the correct pose, the robot was localized.
+\end{itemize}
+
+\textit{Problems:}\\
+This test scenario revealed the difficulties of navigation on uneven paths. The location around the pillar was very uneven so that the robot needed several attempts to turn there, in which it also temporarily moved backwards.
+\end{description}
 
 \chapter{Conclusion}
-\section{Summary and Conclusion}
+\label{Conclusion chapter}
+\section{Summary}
 The kidnapped robot problem can be solved effectively with a robot featuring a Kinect, laser sensors and odometry data.
 
 In this project marker tracking and camera-derived position estimates were generated. A database for markers was built and logic for determining the next expected marker was implemented. Various sensor outputs were merged and filtered by an extended Kalman Filter, the filter behavior was adjusted to be able to cope with varying data quality and different numbers of sensor sources. Conversions between various frames were established. Decision making based on available position data was implemented. A maze-solving-algorithm was employed for map exploration. Contradicting information from sensors as well as high covariances in position estimates were used to determine kidnapping situations. Rviz was heavily used to debug and monitor the software.
 
+The separate modules were tested extensively and a difficult kidnapping with long exploration including a u-turn was resolved successfully.
+
+Fine tuning of head rotation and handling of uneven paths need to be improved.
+\\\\
 Separating the problem into data acquisition task, data processing task and logic task, then solving it in three autonomous groups is easy and saves time. Occasional meetings are enough to discuss the strategy and to define communication interfaces. This approach requires the generation of dummy test data to serve as placeholders for other groups' outputs. It saves tremendous time to document all learned rules and usages for institute specific tools (be it hardware or software) in a shared wiki so that all teams can benefit from it.
 
 \section{Outlook}
