@@ -25,6 +25,63 @@ The robot first turned around on the spot to scan its surroundings while rotatin
 This test scenario revealed the difficulties of navigation on uneven paths. The location around the pillar was very uneven so that the robot needed several attempts in which it also temporarily moved backwards to turn there.
 \end{description}
 
+\begin{enumerate}
+\item MCA localization is disabled and the robot is moved while its camera is in contact with a marker.
+
+\textbf{Actual execution}:
+\begin{itemize}
+\item Robot was started, navigated to see the marker, and is now localized.
+\item MCA localization (laser scanners and odometry) and the motor were turned off
+\item Robot is now kidnapped, because the sensors were not available for a long time.
+\item Robot was moved around manually while maintaining eye contact with the previously seen marker.
+\end{itemize}
+
+\textbf{Result}:
+\begin{itemize}
+\item Kalman group published correct pose of the robot.
+\end{itemize}
+
+
+\item Both MCA localization and camera tracking are disabled. At a new location, the camera is re-enabled and can immediately see a marker.
+
+\textbf{Actual execution}:
+\begin{itemize}
+\item Robot was started, navigated to see a marker, and is now localized.
+\item MCA localization and the motor were turned off. 
+\item Kinect camera was blindfolded.
+\item Robot is now kidnapped, because the sensors were not available for a long time.
+\item Robot was moved around manually to a position where it should be able to see a marker.
+\item Blindfold is removed.
+\item Robot sees the marker.
+\end{itemize} 
+
+\textbf{Result}:
+\begin{itemize}
+\item Kalman group published correct pose of the robot.
+\end{itemize}
+
+\item MCA localization and camera tracking are disabled. At a new location, MCA localization and camera tracking are re-enabled. Robot is not provided with a marker at the new location. 
+
+\textbf{Actual execution}:
+\begin{itemize}
+\item Robot was started.
+\item Robot is now kidnapped, because it has no previous knowledge of where it is located.
+\item Robot looks around and could not find a marker. 
+\item Robot goes to the nearest obstacle and aligns itself parallely.
+\item Robot moves along the left obstacle.
+\item Robot finds a free space on the left side.
+\item Robot turns left and moves forward.
+\item Robot finds a marker.
+\end{itemize} 
+
+\textbf{Result}:
+\begin{itemize}
+\item Kalman group published correct pose of the robot.
+\item Robot is localized.
+\end{itemize}
+
+\end{enumerate}
+
 \chapter{Conclusion}
 \section{Summary and Conclusion}
 The kidnapped robot problem can be solved effectively with a robot featuring a Kinect, laser sensors and odometry data.
