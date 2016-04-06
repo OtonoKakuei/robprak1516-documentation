@@ -1,14 +1,15 @@
 \chapter{Data fusion}
+The Data fusion module is responsible for converting all available sensor data into uniform frames and to generate a fused pose based on their certainties. It uses an \textit{extended Kalman filter} for this task.
 \label{Kalman chapter}
 \section{Initial Matlab Parameter Simulation}
-Before starting development for the robot, the beginning of the project was spent on building a simple \textsc{Matlab} simulation of a Kalman Filter.
-This allowed the group to get acquainted to the different parameters of a Kalman Filter and to learn how they influence estimation.
+Before starting development for the robot, the beginning of the project was spent on building a simple \textsc{Matlab} simulation of a Kalman filter.
+This allowed the group to get acquainted to the different parameters of a Kalman filter and to learn how they influence estimation.
 
-By inserting velocity data and analyzing the predictions we gained much insight into the Kalman Filter model. Additionally the effects of the noise covariances became much clearer in a way that was very helpful throughout the project.
+By inserting velocity data and analyzing the predictions we gained much insight into the Kalman filter model. Additionally the effects of the noise covariances became much clearer in a way that was very helpful throughout the project.
 
 \section{ROS Package Dependencies}
 \subsection{Robot localization}
-For the functionality of the Kalman Filter the package \texttt{robot\_localization} is used. The package provides a convenient 15-dimensional implementation of the Kalman Filter with direct support for 6D pose, 6D velocity and 3D acceleration vectors. The available inputs can be dynamically configured in the \texttt{.launch} file for the \texttt{robot\_localization} node. In general the whole package is configurable via \texttt{.launch} file or \texttt{.yaml} file.
+For the functionality of the Kalman filter the package \texttt{robot\_localization} is used. The package provides a convenient 15-dimensional implementation of the Kalman filter with direct support for 6D pose, 6D velocity and 3D acceleration vectors. The available inputs can be dynamically configured in the \texttt{.launch} file for the \texttt{robot\_localization} node. In general the whole package is configurable via \texttt{.launch} file or \texttt{.yaml} file.
 
 \subsection{TF (Transformation)}
 The \texttt{TF} package is used to define all sorts of data transformations in different coordinate systems. In this case the robot's map data and the input of the marker detection are converted to be fused in a common coordinate system. 
@@ -30,7 +31,7 @@ This package contains the actual logic for data fusion.
 For full flexibility \texttt{kalman\_global} defines namespaces containing names for all parameters that are configurable through \texttt{yaml} files at runtime. For example the \texttt{node} namespace includes following parameters:
 \begin{description}
 \item[converter] Node for converting poses into appropriate frames.
-\item[ekf\_launch] Launch file for the Extended Kalman Filter (EKF) from \texttt{robot\_localization}.
+\item[ekf\_launch] Launch file for the Extended Kalman filter (EKF) from \texttt{robot\_localization}.
 \item[set\_pose] This node tests the pose reset functionality in case of a kidnapping.
 \item[visualizer] The visual monitoring and debugging node using rviz.
 \end{description}
@@ -64,11 +65,11 @@ Several IDs are listed in the \texttt{param} namespace: world, map, odom, frame 
 	\end{itemize}
 \end{description}
 
-This node is part of the ROS \texttt{robot\_localization} package and implements the \textit{Extended Kalman Filter} (EKF). An \texttt{ekf\_params.yaml} file configures it by defining initial estimate covariance, process noise covariances, queue sizes, publishing frequency and subscripted topics.
+This node is part of the ROS \texttt{robot\_localization} package and implements the Extended Kalman filter (EKF). An \texttt{ekf\_params.yaml} file configures it by defining initial estimate covariance, process noise covariances, queue sizes, publishing frequency and subscripted topics.
 
 It listens on the `laserProcessed'' topic to which the converter publishes laser data that is converted from local\_map to global frame. This is fused with the robot's odometry data from \\ ``/robot/lauron/odom'' topic and ``/vision/estimated\_pose'' to which the vision module publishes poses derived from camera images.
 
-It is also subscripted to ``reset\_sensor''. Here a new position with very low covariances is optionally published to convince the filter to trust the pose obtained on kidnap recovery. Although this can be used to correctly reset the filter, another approach is currently active, section \ref{Kidnap recovery section}.
+It is also subscripted to ``reset\_sensor''. Here a new position with very low covariances is optionally published to convince the filter to trust the pose obtained on kidnap recovery. Although this can be used to correctly reset the filter, another approach is currently active as described in section Kidnap recovery \ref{subsection:kidnap_recovery}.
 
 Finally, the fused pose is published to \textbf{``odometry/filtered''} in local\_map.
 
@@ -127,7 +128,7 @@ In the first months of the project it was impossible to test implementation with
 Test data from two different generation techniques have been employed: a quick but very unrealistic solution in \textsc{Matlab} and later a more sophisticated simulation using the MonoGame framework.
 
 \subsection{Test data from \textsc{Matlab}}
-In \textsc{Matlab} test data was generated by supplying a number of points provided by the user and distributed over time. The \textsc{Matlab} script uses a cubic spline interpolation to generate the values in between. For simplicity these values were initially only generated for one dimension of the Kalman Filter.
+In \textsc{Matlab} test data was generated by supplying a number of points provided by the user and distributed over time. The \textsc{Matlab} script uses a cubic spline interpolation to generate the values in between. For simplicity these values were initially only generated for one dimension of the Kalman filter.
 
 Primitive testing was possible with this data virtually from day one.
 
@@ -145,12 +146,12 @@ For the generation of more realistic test data, including 2D poses and robot vie
 
 Two placeholder sensor nodes -- representing laser sensor and Kinect -- read from the test data files and published them in a loop on ``/poseupdate'' (laser topic) and ``/vision/estimated\_pose'' (Kinect topic).
 
-This way the Kalman Filter could be tested even if the actual sensor nodes were still in development. It was now possible to tweak the many parameters of the \texttt{robot\_localization node} and study the filters behavior independently of the other groups.
+This way the Kalman filter could be tested even if the actual sensor nodes were still in development. It was now possible to tweak the many parameters of the \texttt{robot\_localization node} and study the filters behavior independently of the other groups.
 
 \subsection{Package \texttt{kalman\_debug}}
 After development of the input and procesing pipeline for test data, the next challenge was to evaluate the filter's outputs. Since it is very difficult to interpret the fused poses by only looking at numbers, the ROS package \texttt{rviz} was utilized to visually compare input data and filtered result.
 
-The visual proof for the effects of parameter changes greatly enhanced our capability to evaluate the Kalman filter's performance. In the figures \ref{Fig: Kalman Fusion - Low}, \ref{Fig: Kalman Fusion - Medium} and \ref{Fig: Kalman Fusion - High} the change of the target position's x component over time is visualized. The \textbf{blue line} represents the position received from ``/vision/estimated\_pose'' while the \textbf{red line} represents the data received from ``laserProcessed''. The \textbf{green line} is the fused data of the kalman filter read from ``fused\_pose''.
+The visual proof for the effects of parameter changes greatly enhanced our capability to evaluate the Kalman filter's performance. In the figures \ref{Fig: Kalman Fusion - Low}, \ref{Fig: Kalman Fusion - Medium} and \ref{Fig: Kalman Fusion - High} the change of the target position's x component over time is visualized. The \textbf{blue line} represents the position received from ``/vision/estimated\_pose'' while the \textbf{red line} represents the data received from ``laserProcessed''. The \textbf{green line} is the fused data of the Kalman filter read from ``fused\_pose''.
 
 \subsection{visualizer node}
 \begin{description}
@@ -167,7 +168,7 @@ The visual proof for the effects of parameter changes greatly enhanced our capab
 	\end{itemize}
 \end{description}
 
-The visualizer node subscribes to the output topic of the Kalman Filter (``fused\_pose'') and the sensor topics ``laserProcessed'' and ``laserProcessed'' to create displayable markers that can be used to evaluate data fusion quality. These displayable markers are of type \\ \texttt{visualization\_msgs::Marker} and published to the ``visualization\_marker'' topic on which \textit{rviz} is subscripted. The received markers appear in the rviz coordinate system as they arrive.
+The visualizer node subscribes to the output topic of the Kalman filter (``fused\_pose'') and the sensor topics ``laserProcessed'' and ``laserProcessed'' to create displayable markers that can be used to evaluate data fusion quality. These displayable markers are of type \\ \texttt{visualization\_msgs::Marker} and published to the ``visualization\_marker'' topic on which \textit{rviz} is subscripted. The received markers appear in the rviz coordinate system as they arrive.
 
 There are two possible visualization modes:
 
@@ -176,7 +177,7 @@ There are two possible visualization modes:
 \item Show change over time of pose in x for each marker.
 \end{itemize}
 
-It might also be useful to display process covariances over time to gain a better understanding of why there is a sudden change in the kalman filter's behavior.
+It might also be useful to display process covariances over time to gain a better understanding of why there is a sudden change in the Kalman filter's behavior.
 
 \subsection{set\_pose node}
 \begin{description}
@@ -184,42 +185,32 @@ It might also be useful to display process covariances over time to gain a bette
 \end{description}
 This node tests pose reset in kidnapping situations. It calls the ``reset\_sensor\_srv'' service with a a dummy pose to overwrite the current pose.
 
-The effect of this call can be viewed in rviz where the fused pose's marker is expected to jump to the new pose. In figures \ref{Fig: Kalman Fusion - Low}, \ref{Fig: Kalman Fusion - Medium} and \ref{Fig: Kalman Fusion - High} this behavior is shown by displaying the position's x component over time. As before the \textbf{blue line} represents the position received from ``/vision/estimated\_pose'', the \textbf{red line} represents data received from ``laserProcessed'' and the \textbf{green line} is fused data of the kalman filter read from ``fused\_pose''.
+The effect of this call can be viewed in rviz where the fused pose's marker is expected to jump to the new pose. In figures \ref{Fig: Kalman Fusion - Low}, \ref{Fig: Kalman Fusion - Medium} and \ref{Fig: Kalman Fusion - High} this behavior is shown by displaying the position's x component over time. As before the \textbf{blue line} represents the position received from ``/vision/estimated\_pose'', the \textbf{red line} represents data received from ``laserProcessed'' and the \textbf{green line} is fused data of the Kalman filter read from ``fused\_pose''.
 
-In the tests camera and laser pose estimation are artificially chosen wide apart. The behavior of the kalman filter is shown if the input stream of ``laserProcessed'' stops for a while and starts sending again.
-
-As can be seen, the amount of time to jump back to normal pose increases with higher system confidence.
+In the tests camera and laser pose estimation are artificially chosen wide apart. The behavior of the Kalman filter is shown if the input stream of ``laserProcessed'' stops for a while and starts sending again. As can be seen, the amount of time to jump back to normal pose increases with higher system confidence.
 
 \begin{figure}[thpb]
       \centering
       \includegraphics[width=0.5\textwidth]{graphics/kalman_fast.png}
-      %\includegraphics[scale=1.0]{figurefile}
       \caption{Kalman fusion - low system confidence}
       \label{Fig: Kalman Fusion - Low}
-   \end{figure}
-
-\begin{figure}[thpb]
-      \centering
+\vspace{20pt}
       \includegraphics[width=0.5\textwidth]{graphics/kalman_medium.png}
-      %\includegraphics[scale=1.0]{figurefile}
       \caption{Kalman fusion - medium system confidence}
       \label{Fig: Kalman Fusion - Medium}
-   \end{figure}
-	
-\begin{figure}[thpb]
+\vspace{20pt}
       \centering
       \includegraphics[width=0.5\textwidth]{graphics/kalman_slow.png}
-      %\includegraphics[scale=1.0]{figurefile}
       \caption{Kalman fusion - high system confidence}
       \label{Fig: Kalman Fusion - High}
-   \end{figure}
+\end{figure}
 
 \section{Difficulties}
 \subsection{Initial start with custom Kalman Implementation}
-Before using the \texttt{robot\_localization} package a quick attempt to implement the Kalman Filter manually was investigated. Luckily our attention was directed towards the \texttt{robot\_localization} package before more than data subscription and publishing were implemented, both of which were fortunately reused throughout the project.
+Before using the \texttt{robot\_localization} package a quick attempt to implement the Kalman filter manually was investigated. Luckily our attention was directed towards the \texttt{robot\_localization} package before more than data subscription and publishing were implemented, both of which were fortunately reused throughout the project.
 
 \subsection{Difficulties with employing MCA2}
-When the Kalman Filter performed satisfactorily with the artificial test data, the next step consisted of producing more realistic data with a true robot simulator. For this MCA2 appeared to be a suitable solution. But the installation of MCA2 and the simulator presented unexpected difficulties and failed in the end.
+When the Kalman filter performed satisfactorily with the artificial test data, the next step consisted of producing more realistic data with a true robot simulator. For this MCA2 appeared to be a suitable solution. But the installation of MCA2 and the simulator presented unexpected difficulties and failed in the end.
 
 One of the reasons is the quality of the MCA2 documentation which posed a major problem. It is highly fragmented, redundant, often outdated and in some places contradictory. Very often it was difficult to understand if an installation error was caused by a user mistake or by the documentation and if the latter, whether it is only unclear, incomplete or incorrect. 
 
@@ -233,12 +224,12 @@ By that time data publishing and necessary software for it have already been fac
 While working with virtual machines for ROS package development the problem of incorrect communication between the packages was discovered. Only when starting the nodes in the right order with appropriate delays in between, the system would work on the robot. In general the specification of the \texttt{ROS\_IP} environment variable is used to solve that issue. The local IP of the virtual machines behind a NAT was not available and so the execution of the nodes was completely moved to the robot.
 
 \subsection{Boundary for accepted jumps between sensor outputs}
-When first configuring the \texttt{robot\_localization} package, a threshold for tolerated jumps in the sensor data was set to a rather low value. This caused the Kalman Filter to exhibit a lot of unexpected behavior, for instance it did not respect changes in one sensor at all. After setting the threshold to an appropriate value, the filter worked even better as initially expected. This is partly due to the well adjusted remaining parameters of the Kalman Filter which were already thoroughly tested with the Matlab simulation.
+When first configuring the \texttt{robot\_localization} package, a threshold for tolerated jumps in the sensor data was set to a rather low value. This caused the Kalman filter to exhibit a lot of unexpected behavior, for instance it did not respect changes in one sensor at all. After setting the threshold to an appropriate value, the filter worked even better as initially expected. This is partly due to the well adjusted remaining parameters of the Kalman filter which were already thoroughly tested with the Matlab simulation.
 
 \subsection{Set pose of robot\_localization does not work as expected}
-The \texttt{robot\_localization} package provides a \texttt{set\_pose} topic to force the actual pose of the robot. It was planned to use this topic to inform the Kalman Filter about the new pose after having recovered the robot from kidnapped state. Unfortunately this sets the pose permanently and further input is ignored, so another solution was necessary.
+The \texttt{robot\_localization} package provides a \texttt{set\_pose} topic to force the actual pose of the robot. It was planned to use this topic to inform the Kalman filter about the new pose after having recovered the robot from kidnapped state. Unfortunately this sets the pose permanently and further input is ignored, so another solution was necessary.
 
-The approach of choice uses a third virtual input sensor that sends the recovered pose along with very low covariances to convince the Kalman Filter to trust this source the most.
+The approach of choice uses a third virtual input sensor that sends the recovered pose along with very low covariances to convince the Kalman filter to trust this source the most.
 
 But in the final implementation the necessity to react to a kidnap event was disabled in the Kalman filter. Instead, we opted for a simpler behaviour: the high level logic updates the transform immediately after having resolved the kidnapping, so that sensor data discrepancies are removed. 
 
